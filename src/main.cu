@@ -1,9 +1,12 @@
 #include <cuda_runtime.h>
 #include <windowsnumerics.h>
 #include <cstdlib>
+#include <ctime>
+#include <random>
 
-#define EPS = 0.01; // softening factor
-#define G = 6.67430; // gravitational const. (10^-11 m³/kgs³)
+#define EPS 0.01 // softening factor
+#define EPS2 EPS * EPS
+#define G = 6.67430 // gravitational const. (10^-11 m³/kgs³)
 
 // Configuration
 float N = 1000; // Number of particles
@@ -52,7 +55,7 @@ __device__ float3 bodyBodyInteraction(float4 bi, float4 bj, float3 ai)
 __device__ float3 tile_calculation(float4 myPosition, float3 accel)
 {
     int i;
-    extern __shared__ float4[] shPosition;
+    extern __shared__ float4 shPosition[];
     for (i = 0; i < blockDim.x; i++) {
     accel = bodyBodyInteraction(myPosition, shPosition[i], accel);
     }
@@ -75,15 +78,16 @@ int main()
     std::srand(std::time({})); // initialise seed
     for (int i = 0; i < N; i++) {
         h_pos[i].w = 0.05;
-        h_pos[i].x = std::rand(posXMin, posXMax);
-        h_pos[i].y = std::rand(posYMin, posYMax);
-        h_pos[i].z = std::rand(posZMin, posZMax);
-        h_acc[i].x = std::rand(accXMin, accXMax);
-        h_acc[i].y = std::rand(accYMin, accYMax);
-        h_acc[i].z = std::rand(accZMin, accZMax);
+        h_pos[i].x = posXMin + ( std::rand() % ( posXMax - posXMin + 1 ) );
+        h_pos[i].y = posYMin + ( std::rand() % ( posYMax - posYMin + 1 ) );
+        h_pos[i].z = posZMin + ( std::rand() % ( posZMax - posZMin + 1 ) );
+        h_acc[i].x = accXMin + ( std::rand() % ( accXMax - accXMin + 1 ) );
+        h_acc[i].y = accYMin + ( std::rand() % ( accYMax - accYMin + 1 ) );
+        h_acc[i].z = accZMin + ( std::rand() % ( accZMax - accZMin + 1 ) );
     }
 
     // TODO: Copy particles from device to host
+    cudaMemcpy(d_pos, h_pos, N * sizeof(float4), cudaMemcpyHostToDevice);
 
     // TODO: Run calculation for n time steps
 
