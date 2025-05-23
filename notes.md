@@ -2,7 +2,7 @@
 
 ## Introduction
 
-- good introduction for presentation ("The all-pairs approach to N-body simulation is a brute-force technique that evaluates all pair-wise interactions among the N bodies. It is a relatively simple method, but one that is not generally used on its own in the simulation of large systems because of its O(N 2) computational complexity")
+- good introduction for presentation ("The all-pairs approach to N-body simulation is a brute-force technique that evaluates all pair-wise interactions among the N bodies. It is a relatively simple method, but one that is not generally used on its own in the simulation of large systems because of its O(N²) computational complexity")
 
 - close-range vs longe-range (all-pairs vs far-field approximation)
 
