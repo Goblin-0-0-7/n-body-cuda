@@ -11,6 +11,7 @@
 // Configuration
 float N = 1000; // Number of particles
 float dt = 0.01; // Time step (second?)
+float steps = 1000;
 float L = 3; // box width (in meter?)
 
 // ranges for the initial position of the particles
@@ -62,6 +63,28 @@ __device__ float3 tile_calculation(float4 myPosition, float3 accel)
     return accel;
 }
 
+__global__ void calculate_forces(void *devX, void *devA)
+{
+  extern __shared__ float4[] shPosition;
+  float4 *globalX = (float4 *)devX;
+  float4 *globalA = (float4 *)devA;
+  float4 myPosition;
+  int i, tile;
+  float3 acc = {0.0f, 0.0f, 0.0f};
+  int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+  myPosition = globalX[gtid];
+  for (i = 0, tile = 0; i < N; i += p, tile++) {
+    int idx = tile * blockDim.x + threadIdx.x;
+    shPosition[threadIdx.x] = globalX[idx];
+    __syncthreads();
+    acc = tile_calculation(myPosition, acc);
+    __syncthreads();
+  }
+  // Save the result in global memory for the integration step.
+   float4 acc4 = {acc.x, acc.y, acc.z, 0.0f};
+  globalA[gtid] = acc4;
+}
+
 int main()
 {
     // Allocate space for particles on host
@@ -86,11 +109,14 @@ int main()
         h_acc[i].z = accZMin + ( std::rand() % ( accZMax - accZMin + 1 ) );
     }
 
-    // TODO: Copy particles from device to host
+    // Copy particles from device to host
     cudaMemcpy(d_pos, h_pos, N * sizeof(float4), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_acc, h_acc, N * sizeof(float4), cudaMemcpyHostToDevice);
 
     // TODO: Run calculation for n time steps
-
+    for (int i = 0; i < steps; i++;) {
+        calculate_forces(d_pos, d_acc);
+    }
     // TODO: Copy particles form host to device
 
     // TODO: Update visualization
