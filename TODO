@@ -1,0 +1,13 @@
+# Debugging
+- Add Makefile
+- Write Unittest or other tests to validate execution
+
+# Usability
+- Implement variable execution parameters (eg. first per makefile, then per GUI)
+
+# GUI
+- Implement Visualisation (based on OpenGL)
+- Add Control Widgets to View (eg. particle count, time step, ...)
+
+# Performance
+- Implement Barens-Hut algorithm

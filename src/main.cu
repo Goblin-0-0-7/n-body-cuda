@@ -12,6 +12,7 @@
 float N = 1000; // Number of particles
 float dt = 0.01; // Time step (second?)
 float steps = 1000;
+float p = 16; // Threads per block / Block dimension (how many?)
 float L = 3; // box width (in meter?)
 
 // ranges for the initial position of the particles
@@ -56,7 +57,7 @@ __device__ float3 bodyBodyInteraction(float4 bi, float4 bj, float3 ai)
 __device__ float3 tile_calculation(float4 myPosition, float3 accel)
 {
     int i;
-    extern __shared__ float4 shPosition[];
+    extern __shared__ float4[] shPosition;
     for (i = 0; i < blockDim.x; i++) {
     accel = bodyBodyInteraction(myPosition, shPosition[i], accel);
     }
@@ -72,10 +73,11 @@ __global__ void calculate_forces(void *devX, void *devA)
   int i, tile;
   float3 acc = {0.0f, 0.0f, 0.0f};
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+
   myPosition = globalX[gtid];
-  for (i = 0, tile = 0; i < N; i += p, tile++) {
+  for (i = 0, tile = 0; i < N; i += p, tile++) { // N needs to be divisible by p
     int idx = tile * blockDim.x + threadIdx.x;
-    shPosition[threadIdx.x] = globalX[idx];
+    shPosition[threadIdx.x] = globalX[idx]; // TODO: understand this call
     __syncthreads();
     acc = tile_calculation(myPosition, acc);
     __syncthreads();
@@ -109,15 +111,21 @@ int main()
         h_acc[i].z = accZMin + ( std::rand() % ( accZMax - accZMin + 1 ) );
     }
 
-    // Copy particles from device to host
+    // TODO: visualize particles
+
+    // Copy particles from host to device
     cudaMemcpy(d_pos, h_pos, N * sizeof(float4), cudaMemcpyHostToDevice);
     cudaMemcpy(d_acc, h_acc, N * sizeof(float4), cudaMemcpyHostToDevice);
 
     // TODO: Run calculation for n time steps
+    int grid_dim = N / p; // TODO: probably fix type
     for (int i = 0; i < steps; i++;) {
-        calculate_forces(d_pos, d_acc);
+        calculate_forces<<<grid_dim,p>>>(d_pos, d_acc);
     }
-    // TODO: Copy particles form host to device
+
+    // Copy particles form device to host
+    cudaMemcpy(h_pos, d_pos, N * sizeof(float4), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_acc, d_acc, N * sizeof(float4), cudaMemcpyDeviceToHost);
 
     // TODO: Update visualization
 }
