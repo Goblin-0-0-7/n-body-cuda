@@ -9,10 +9,11 @@
 #define G = 6.67430 // gravitational const. (10^-11 m³/kgs³)
 
 // Configuration
-#define N 1000 // Number of particles
-float dt = 0.01; // Time step (second?)
-float steps = 1000;
-#define p 16 // Threads per block / Block dimension (how many?)
+#define N 10 // Number of particles
+#define dt 0.01 // Time step (second?)
+#define dt2 (dt * dt)
+float steps = 10;
+#define p 2 // Threads per block / Block dimension (how many?)
 float L = 3; // box width (in meter?)
 
 // ranges for the initial position of the particles
@@ -23,7 +24,7 @@ int posYMin = posXMin;
 int posZMax = posXMax;
 int posZMin = posXMin;
 // ranges for the initial position of the particles
-int accXMax = 1;
+int accXMax = 0;
 int accXMin = -accXMax;
 int accYMax = accXMax;
 int accYMin = accXMin;
@@ -64,38 +65,49 @@ __device__ float3 tile_calculation(float4 myPosition, float3 accel)
     return accel;
 }
 
+
+__device__ void update_pos(float4* pos, float3* acc)
+{
+    pos->x += 0.5 * acc->x * dt2 + acc->x * dt;
+    pos->y += 0.5 * acc->y * dt2 + acc->y * dt;
+    pos->z += 0.5 * acc->z + dt2 + acc->z * dt;
+}
+
 __global__ void calculate_forces(void *devX, void *devA)
 {
-  extern __shared__ float4 shPosition[];
-  float4 *globalX = (float4 *)devX;
-  float4 *globalA = (float4 *)devA;
-  float4 myPosition;
-  int i, tile;
-  float3 acc = {0.0f, 0.0f, 0.0f};
-  int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+    extern __shared__ float4 shPosition[];
+    float4 *globalX = (float4 *)devX;
+    float4 *globalA = (float4 *)devA;
+    float4 myPosition;
+    int i, tile;
+    float3 acc = {0.0f, 0.0f, 0.0f};
+    int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 
-  myPosition = globalX[gtid];
-  for (i = 0, tile = 0; i < N; i += p, tile++) { // N needs to be divisible by p
+    myPosition = globalX[gtid];
+    for (i = 0, tile = 0; i < N; i += p, tile++) { // N needs to be divisible by p
     int idx = tile * blockDim.x + threadIdx.x;
     shPosition[threadIdx.x] = globalX[idx]; // TODO: understand this call
     __syncthreads();
     acc = tile_calculation(myPosition, acc);
     __syncthreads();
-  }
-  // Save the result in global memory for the integration step.
-   float4 acc4 = {acc.x, acc.y, acc.z, 0.0f};
-  globalA[gtid] = acc4;
-}
+    }
+    // Save the result in global memory for the integration step.
+    float4 acc4 = {acc.x, acc.y, acc.z, 0.0f};
+    // Already update position here when acceleration is already in shared memory
+    update_pos(&myPosition, &acc);
+    globalA[gtid] = acc4;
+    }
+
 
 int main()
 {
     // Allocate space for particles on host
     float4* h_pos = (float4*) malloc(N * sizeof(float4));
-    float3* h_acc = (float3*) malloc(N * sizeof(float3));
+    float4* h_acc = (float4*) malloc(N * sizeof(float4));
 
     // Allocate space for particles on device
     float4* d_pos;
-    float3* d_acc;
+    float4* d_acc;
     cudaMalloc(&d_pos, N);
     cudaMalloc(&d_acc, N);
 
@@ -112,6 +124,12 @@ int main()
     }
 
     // TODO: visualize particles
+    printf("Initial particles:\n");
+    for (int i = 0; i < N; i++) {
+        printf("Particle %d: Position (%f, %f, %f), Acceleration (%f, %f, %f)\n",
+               i, h_pos[i].x, h_pos[i].y, h_pos[i].z,
+               h_acc[i].x, h_acc[i].y, h_acc[i].z);
+    }
 
     // Copy particles from host to device
     cudaMemcpy(d_pos, h_pos, N * sizeof(float4), cudaMemcpyHostToDevice);
@@ -121,6 +139,7 @@ int main()
     int grid_dim = N / p; // TODO: probably fix type
     for (int i = 0; i < steps; i++) {
         calculate_forces<<<grid_dim,p>>>(d_pos, d_acc);
+        update_positions<<<grid_dim,p>>>(d_pos, d_acc, dt);
     }
 
     // Copy particles form device to host
@@ -128,4 +147,10 @@ int main()
     cudaMemcpy(h_acc, d_acc, N * sizeof(float4), cudaMemcpyDeviceToHost);
 
     // TODO: Update visualization
+    printf("Initial particles:\n");
+    for (int i = 0; i < N; i++) {
+        printf("Particle %d: Position (%f, %f, %f), Acceleration (%f, %f, %f)\n",
+               i, h_pos[i].x, h_pos[i].y, h_pos[i].z,
+               h_acc[i].x, h_acc[i].y, h_acc[i].z);
+    }
 }
