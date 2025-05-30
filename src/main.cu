@@ -10,14 +10,14 @@
 
 // Configuration
 #define N 10 // Number of particles
-#define dt 0.01 // Time step (second?)
+#define dt 1 // Time step (second?)
 #define dt2 (dt * dt)
-float steps = 10;
+float steps = 10000;
 #define p 2 // Threads per block / Block dimension (how many?)
 float L = 3; // box width (in meter?)
 
 // ranges for the initial position of the particles
-int posXMax = 2;
+int posXMax = 1;
 int posXMin = -posXMax;
 int posYMax = posXMax;
 int posYMin = posXMin;
@@ -31,7 +31,7 @@ int accYMin = accXMin;
 int accZMax = accXMax;
 int accZMin = accXMin;
 // TODO: ranges for the initial weight of the particles
-
+float parWeight = 1;
 
 __device__ float3 bodyBodyInteraction(float4 bi, float4 bj, float3 ai)
 {
@@ -94,7 +94,7 @@ __global__ void calculate_forces(void *devX, void *devA)
     // Save the result in global memory for the integration step.
     float4 acc4 = {acc.x, acc.y, acc.z, 0.0f};
     // Already update position here when acceleration is already in shared memory
-    update_pos(&myPosition, &acc);
+    update_pos(&globalX[gtid], &acc);
     globalA[gtid] = acc4;
     }
 
@@ -114,7 +114,7 @@ int main()
     // Initialize particles on host? (for now yes, but probably faster on gpu)
     std::srand(std::time({})); // initialise seed
     for (int i = 0; i < N; i++) {
-        h_pos[i].w = 0.05;
+        h_pos[i].w = parWeight;
         h_pos[i].x = posXMin + ( std::rand() % ( posXMax - posXMin + 1 ) );
         h_pos[i].y = posYMin + ( std::rand() % ( posYMax - posYMin + 1 ) );
         h_pos[i].z = posZMin + ( std::rand() % ( posZMax - posZMin + 1 ) );
@@ -139,7 +139,6 @@ int main()
     int grid_dim = N / p; // TODO: probably fix type
     for (int i = 0; i < steps; i++) {
         calculate_forces<<<grid_dim,p>>>(d_pos, d_acc);
-        update_positions<<<grid_dim,p>>>(d_pos, d_acc, dt);
     }
 
     // Copy particles form device to host
