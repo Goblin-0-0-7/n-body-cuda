@@ -1,0 +1,22 @@
+﻿  Compiling CUDA source file ..\ref\kernel.cu...
+  Compiling CUDA source file ..\src\main.cu...
+  
+  D:\Programming\n-body-cuda\vsproj>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\bin\nvcc.exe" -gencode=arch=compute_52,code=\"sm_52,compute_52\" --use-local-env -ccbin "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64" -x cu   -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\include"  -G   --keep-dir nbody\x64\Debug  -maxrregcount=0    --machine 64 --compile -cudart static  -g  -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MDd " -Xcompiler "/Fd..\bin\intmed\Debug\vc143.pdb" -o ..\bin\cuda\kernel.cu.obj "D:\Programming\n-body-cuda\ref\kernel.cu" 
+  
+  D:\Programming\n-body-cuda\vsproj>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\bin\nvcc.exe" -gencode=arch=compute_52,code=\"sm_52,compute_52\" --use-local-env -ccbin "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64" -x cu   -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\include"  -G   --keep-dir nbody\x64\Debug  -maxrregcount=0    --machine 64 --compile -cudart static  -g  -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MDd " -Xcompiler "/Fd..\bin\intmed\Debug\vc143.pdb" -o ..\bin\cuda\main.cu.obj "D:\Programming\n-body-cuda\src\main.cu" 
+CUDACOMPILE : nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+  kernel.cu
+  tmpxft_00004c20_00000000-7_kernel.cudafe1.cpp
+CUDACOMPILE : nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+  main.cu
+  tmpxft_00003afc_00000000-7_main.cudafe1.cpp
+D:\Programming\n-body-cuda\src\main.cu(115): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+D:\Programming\n-body-cuda\src\main.cu(118): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+D:\Programming\n-body-cuda\src\main.cu(119): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+D:\Programming\n-body-cuda\src\main.cu(120): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+D:\Programming\n-body-cuda\src\main.cu(121): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+D:\Programming\n-body-cuda\src\main.cu(122): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+D:\Programming\n-body-cuda\src\main.cu(123): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+     Creating library ..\bin\Debug\nbody.lib and object ..\bin\Debug\nbody.exp
+LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
+  nbody.vcxproj -> D:\Programming\n-body-cuda\bin\Debug\nbody.exe
