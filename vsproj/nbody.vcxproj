@@ -12,7 +12,16 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="..\ref\kernel.cu" />
-    <CudaCompile Include="..\src\main.cu" />
+    <CudaCompile Include="..\src\calc.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\glad.c" />
+    <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\visuals.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\calc.h" />
+    <ClInclude Include="..\src\visuals.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6618910E-38F2-0B80-28D3-8BBB3BCA8FCA}</ProjectGuid>
@@ -48,6 +57,8 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\$(Configuration)\</OutDir>
     <IntDir>..\bin\intmed\$(Configuration)\</IntDir>
+    <IncludePath>D:\Programming\n-body-cuda\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Programming\n-body-cuda\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -58,7 +69,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>cudart_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cudart_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
