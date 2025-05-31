@@ -3,35 +3,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <random>
+#include <iostream>
 
-#define EPS 0.01 // softening factor
-#define EPS2 EPS * EPS
-#define G = 6.67430 // gravitational const. (10^-11 m³/kgs³)
-
-// Configuration
-#define N 10 // Number of particles
-#define dt 1 // Time step (second?)
-#define dt2 (dt * dt)
-float steps = 10000;
-#define p 2 // Threads per block / Block dimension (how many?)
-float L = 3; // box width (in meter?)
-
-// ranges for the initial position of the particles
-int posXMax = 1;
-int posXMin = -posXMax;
-int posYMax = posXMax;
-int posYMin = posXMin;
-int posZMax = posXMax;
-int posZMin = posXMin;
-// ranges for the initial position of the particles
-int accXMax = 0;
-int accXMin = -accXMax;
-int accYMax = accXMax;
-int accYMin = accXMin;
-int accZMax = accXMax;
-int accZMin = accXMin;
-// TODO: ranges for the initial weight of the particles
-float parWeight = 1;
+#include "calc.h"
 
 __device__ float3 bodyBodyInteraction(float4 bi, float4 bj, float3 ai)
 {
@@ -66,14 +40,15 @@ __device__ float3 tile_calculation(float4 myPosition, float3 accel)
 }
 
 
-__device__ void update_pos(float4* pos, float3* acc)
+__device__ void update_pos(float4* pos, float3* acc, float dt, float dt2)
 {
     pos->x += 0.5 * acc->x * dt2 + acc->x * dt;
     pos->y += 0.5 * acc->y * dt2 + acc->y * dt;
     pos->z += 0.5 * acc->z + dt2 + acc->z * dt;
 }
 
-__global__ void calculate_forces(void *devX, void *devA)
+
+__global__ void calculate_forces(void* devX, void* devA, int N, int p, float dt, float dt2)
 {
     extern __shared__ float4 shPosition[];
     float4 *globalX = (float4 *)devX;
@@ -94,58 +69,134 @@ __global__ void calculate_forces(void *devX, void *devA)
     // Save the result in global memory for the integration step.
     float4 acc4 = {acc.x, acc.y, acc.z, 0.0f};
     // Already update position here when acceleration is already in shared memory
-    update_pos(&globalX[gtid], &acc);
+    update_pos(&globalX[gtid], &acc, dt, dt2);
     globalA[gtid] = acc4;
     }
 
+NBodyCalc::NBodyCalc() {
+    N = 10;
+    p = 2;
+    partWeight = 1;
+    posRange.xMin = 0;
+    posRange.xMax = 0;
+    posRange.yMin = 0;
+    posRange.yMax = 0;
+    posRange.zMin = 0;
+    posRange.zMax = 0;
+    accRange.xMin = 0;
+    accRange.xMax = 0;
+    accRange.yMin = 0;
+    accRange.yMax = 0;
+    accRange.zMin = 0;
+    accRange.zMax = 0;
+    h_pos = nullptr;
+    h_acc = nullptr;
+    d_pos = nullptr;
+    d_acc = nullptr;
+}
 
-int mainCalc()
+NBodyCalc::~NBodyCalc() {
+    free(h_pos);
+    free(h_acc);
+    free(d_pos);
+    free(d_acc);
+}
+
+int NBodyCalc::initializeCalc(int N, int p, float partWeight, range3 posRange, range3 accRange)
 {
-    // Allocate space for particles on host
-    float4* h_pos = (float4*) malloc(N * sizeof(float4));
-    float4* h_acc = (float4*) malloc(N * sizeof(float4));
+    int failure;
 
-    // Allocate space for particles on device
-    float4* d_pos;
-    float4* d_acc;
-    cudaMalloc(&d_pos, N);
-    cudaMalloc(&d_acc, N);
-
-    // Initialize particles on host? (for now yes, but probably faster on gpu)
-    std::srand(std::time({})); // initialise seed
-    for (int i = 0; i < N; i++) {
-        h_pos[i].w = parWeight;
-        h_pos[i].x = posXMin + ( std::rand() % ( posXMax - posXMin + 1 ) );
-        h_pos[i].y = posYMin + ( std::rand() % ( posYMax - posYMin + 1 ) );
-        h_pos[i].z = posZMin + ( std::rand() % ( posZMax - posZMin + 1 ) );
-        h_acc[i].x = accXMin + ( std::rand() % ( accXMax - accXMin + 1 ) );
-        h_acc[i].y = accYMin + ( std::rand() % ( accYMax - accYMin + 1 ) );
-        h_acc[i].z = accZMin + ( std::rand() % ( accZMax - accZMin + 1 ) );
+    /* Check if N and p are reasonable values */
+    if (p > N) {
+        std::cout << "ERROR::CALC::P_VALUE_TO_LARGE\n" << std::endl;
+        return 1;
+    }
+    if (N % p != 0) {
+        std::cout << "ERROR::CALC::N_VALUE_NOT_DEVISABLE_BY_P_VALUE\n" << std::endl;
+        return 1;
     }
 
-    // TODO: visualize particles
+    /* Set values */
+    this->N = N;
+    this->p = p;
+    this->partWeight = partWeight;
+    this->posRange = posRange;
+    this->accRange = accRange;
+
+    /* Allocate space for particles on host */
+    h_pos = (float4*)malloc(N * sizeof(float4));
+    h_acc = (float4*)malloc(N * sizeof(float4));
+
+    /* Allocate space for particles on device */
+    cudaError_t d_pos_err = cudaMalloc(&d_pos, N * sizeof(float4));
+    cudaError_t d_acc_err = cudaMalloc(&d_acc, N * sizeof(float4));
+
+    if (!h_pos || !h_acc || d_pos_err != cudaSuccess || d_acc_err != cudaSuccess) {
+        std::cout << "ERROR::CALC::MALLOC_FAILED\n" << std::endl;
+        return 1;
+    }
+
+    failure = initializeParticlesHost();
+    if (failure) {
+        std::cout << "ERROR::CALC::INIT_PARTICLES_FAILED\n" << std::endl;
+        return 1;
+    }
+
+    /* copy particles form host to device */
+    cudaError_t cpy_pos = cudaMemcpy(d_pos, h_pos, N * sizeof(float4), cudaMemcpyHostToDevice);
+    cudaError_t cpy_acc = cudaMemcpy(d_acc, h_acc, N * sizeof(float4), cudaMemcpyHostToDevice);
+    if (cpy_pos != cudaSuccess || cpy_acc != cudaSuccess) {
+        std::cout << "ERROR::CALC::CUDA::MEMCPY_FAILED\n" << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+int NBodyCalc::initializeParticlesHost()
+{
+    if (h_pos == nullptr || h_acc == nullptr) {
+        return 1;
+    }
+
+    /* Initialize particles on host ? (for now yes, but probably faster on gpu) */
+    srand(std::time({})); // initialise seed
+    for (int i = 0; i < N; i++) {
+        h_pos[i].w = partWeight;
+        h_pos[i].x = posRange.xMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (posRange.xMax - posRange.xMin)));
+        h_pos[i].y = posRange.yMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (posRange.yMax - posRange.yMin)));
+        h_pos[i].z = posRange.zMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (posRange.zMax - posRange.zMin)));
+
+        h_acc[i].x = accRange.xMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (accRange.xMax - accRange.xMin)));
+        h_acc[i].y = accRange.yMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (accRange.yMax - accRange.yMin)));
+        h_acc[i].z = accRange.zMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (accRange.zMax - accRange.zMin)));
+    }
+
+    /* print values for debugging */
     printf("Initial particles:\n");
     for (int i = 0; i < N; i++) {
         printf("Particle %d: Position (%f, %f, %f), Acceleration (%f, %f, %f)\n",
-               i, h_pos[i].x, h_pos[i].y, h_pos[i].z,
-               h_acc[i].x, h_acc[i].y, h_acc[i].z);
+            i, h_pos[i].x, h_pos[i].y, h_pos[i].z,
+            h_acc[i].x, h_acc[i].y, h_acc[i].z);
     }
 
-    // Copy particles from host to device
-    cudaMemcpy(d_pos, h_pos, N * sizeof(float4), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_acc, h_acc, N * sizeof(float4), cudaMemcpyHostToDevice);
+    return 0;
+}
 
-    // TODO: Run calculation for n time steps
+int NBodyCalc::runSimulation(int steps, float dt)
+{
+    float dt2 = dt * dt;
+
     int grid_dim = N / p; // TODO: probably fix type
     for (int i = 0; i < steps; i++) {
-        calculate_forces<<<grid_dim,p>>>(d_pos, d_acc);
+        calculate_forces<<<grid_dim,p>>>(d_pos, d_acc, N, p, dt, dt2);
     }
 
-    // Copy particles form device to host
+    /* Copy particles form device to host */
     cudaMemcpy(h_pos, d_pos, N * sizeof(float4), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_acc, d_acc, N * sizeof(float4), cudaMemcpyDeviceToHost);
 
-    // TODO: Update visualization
+    /* print particle values after simulation */
     printf("Initial particles:\n");
     for (int i = 0; i < N; i++) {
         printf("Particle %d: Position (%f, %f, %f), Acceleration (%f, %f, %f)\n",
