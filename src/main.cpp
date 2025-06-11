@@ -37,13 +37,11 @@ int main() {
 
 	failure = cudaSim->initCalc(N, p, partWeight, posRange, accRange);
 	if (failure) {
-		std::cout << "ERROR::CALC::INITIALIZATION_FAILED\n" << std::endl;
+		std::cout << "ERROR::CALC::INIsTIALIZATION_FAILED\n" << std::endl;
 		return 1;
 	}
 
-	//updateScreen();
-
-	cudaSim->runSimulation(steps, dt);
+	cudaSim->runSimulation(steps, dt, &updateScreen);
 
 
 	initGL();

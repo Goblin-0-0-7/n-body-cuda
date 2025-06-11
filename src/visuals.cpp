@@ -192,3 +192,8 @@ int initGL()
     glfwTerminate();
     return 0;
 }
+
+void updateScreen()
+{
+
+}

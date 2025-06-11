@@ -20,16 +20,19 @@ private:
 	int p;
 	float partWeight;
 	range3 posRange;
+	range3 velRange;
 	range3 accRange;
 	float4* h_pos;
+	float4* h_vel;
 	float4* h_acc;
 	float4* d_pos;
+	float4* d_vel;
 	float4* d_acc;
 
 	int initParticlesHost();
 public:
 	NBodyCalc();
 	~NBodyCalc();
-	int initCalc(int N, int p, float partWeight, range3 posRange, range3 accRange);
-	int runSimulation(int steps, float dt);
+	int initCalc(int N, int p, float partWeight, range3 posRange, range3 velRange, range3 accRange);
+	int runSimulation(int steps, float dt, void (*updateFunc)());
 };

@@ -2,4 +2,4 @@
 
 
 int initGL();
-//void updateScreen();
+void updateScreen();
