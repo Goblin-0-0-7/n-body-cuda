@@ -1,3 +1,5 @@
 
 
-int mainVis();
+
+int initGL();
+//void updateScreen();

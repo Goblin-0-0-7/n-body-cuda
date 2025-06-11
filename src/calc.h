@@ -12,7 +12,7 @@ typedef struct range3 {
 	float yMax;
 	float zMin;
 	float zMax;
-};
+}range3;
 
 class NBodyCalc {
 private:
@@ -26,10 +26,10 @@ private:
 	float4* d_pos;
 	float4* d_acc;
 
-	int initializeParticlesHost();
+	int initParticlesHost();
 public:
 	NBodyCalc();
 	~NBodyCalc();
-	int initializeCalc(int N, int p, float partWeight, range3 posRange, range3 accRange);
+	int initCalc(int N, int p, float partWeight, range3 posRange, range3 accRange);
 	int runSimulation(int steps, float dt);
 };

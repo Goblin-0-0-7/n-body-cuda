@@ -6,19 +6,19 @@
 
 /* source code of vertex shader */
 const char* vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
+"layout (location = 0) in vec3 aPos;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"}\0";
 
 /* source code of fragment shader */
 const char* fragmentShaderSource = "#version 330 core\n"
-    "out vec4 FragColor; \n"
-    "void main()\n"
-    "{\n"
-    "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f); \n"
-    "}\0";
+"out vec4 FragColor; \n"
+"void main()\n"
+"{\n"
+"    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f); \n"
+"}\0";
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -31,37 +31,8 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 }
 
-int mainVis()
+void createNattachShaders(unsigned int* shaderProgram)
 {
-    /* instantiate GLFW window */
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    /* create window object */
-    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-
-    /* initialize GLAD before calling any OpenGL functions */
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-
-    /* telle OpenGL location and size of window */
-    glViewport(0, 0, 800, 600); // left, bottom, widht, height
-
-    /* register callback function for resizing (update viewport on resize) */
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
     /* create vertex shader */
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -91,23 +62,57 @@ int mainVis()
     }
 
     /* create shader program */
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
+    *shaderProgram = glCreateProgram();
 
     /* attach shaders to shader program */
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
+    glAttachShader(*shaderProgram, vertexShader);
+    glAttachShader(*shaderProgram, fragmentShader);
+    glLinkProgram(*shaderProgram);
     /* check if linking failed */
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    glGetProgramiv(*shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        glGetProgramInfoLog(*shaderProgram, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
 
     /* delete shader objects after linking them (no longer needed) */
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+}
+
+int initGL()
+{
+    /* instantiate GLFW window */
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    /* create window object */
+    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+    if (window == NULL)
+    {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+
+    /* initialize GLAD before calling any OpenGL functions */
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    /* tell OpenGL location and size of window */
+    glViewport(0, 0, 800, 600); // left, bottom, widht, height
+
+    /* register callback function for resizing (update viewport on resize) */
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    
+    unsigned int shaderProgram;
+    createNattachShaders(&shaderProgram);
 
     ///* define vertices for triangle */
     float vertices[] = {
@@ -131,16 +136,17 @@ int mainVis()
     //    1, 2, 3    // second triangle
     //};
 
+
     /* create element buffer object */
     unsigned int EBO;
     glGenBuffers(1, &EBO);
-
     /* generate vertex buffer object */
     unsigned int VBO;
     glGenBuffers(1, &VBO);
     /* generate vertex array object */
     unsigned int VAO;
     glGenVertexArrays(1, &VAO);
+
     /* bind the Vertex Array Object first, then bindand set vertex buffer(s), and then configure vertex attributes(s). */
     glBindVertexArray(VAO);
 

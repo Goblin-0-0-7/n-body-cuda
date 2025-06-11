@@ -100,9 +100,16 @@ NBodyCalc::~NBodyCalc() {
     free(h_acc);
     free(d_pos);
     free(d_acc);
+
+    // cudaDeviceReset must be called before exiting in order for profiling and
+    // tracing tools such as Nsight and Visual Profiler to show complete traces.
+    cudaError_t cudaStatus = cudaDeviceReset();
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaDeviceReset failed!");
+    }
 }
 
-int NBodyCalc::initializeCalc(int N, int p, float partWeight, range3 posRange, range3 accRange)
+int NBodyCalc::initCalc(int N, int p, float partWeight, range3 posRange, range3 accRange)
 {
     int failure;
 
@@ -136,7 +143,7 @@ int NBodyCalc::initializeCalc(int N, int p, float partWeight, range3 posRange, r
         return 1;
     }
 
-    failure = initializeParticlesHost();
+    failure = initParticlesHost();
     if (failure) {
         std::cout << "ERROR::CALC::INIT_PARTICLES_FAILED\n" << std::endl;
         return 1;
@@ -153,7 +160,7 @@ int NBodyCalc::initializeCalc(int N, int p, float partWeight, range3 posRange, r
     return 0;
 }
 
-int NBodyCalc::initializeParticlesHost()
+int NBodyCalc::initParticlesHost()
 {
     if (h_pos == nullptr || h_acc == nullptr) {
         return 1;

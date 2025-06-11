@@ -35,15 +35,17 @@ int main() {
 
 	NBodyCalc* cudaSim = new NBodyCalc();
 
-	failure = cudaSim->initializeCalc(N, p, partWeight, posRange, accRange);
+	failure = cudaSim->initCalc(N, p, partWeight, posRange, accRange);
 	if (failure) {
 		std::cout << "ERROR::CALC::INITIALIZATION_FAILED\n" << std::endl;
 		return 1;
 	}
 
+	//updateScreen();
+
 	cudaSim->runSimulation(steps, dt);
 
 
-	//mainVis();
+	initGL();
 	return 0;
 }
