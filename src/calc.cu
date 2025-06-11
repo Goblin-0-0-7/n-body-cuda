@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "calc.h"
+#include "visuals.h"
 
 __device__ float3 bodyBodyInteraction(float4 bi, float4 bj, float3 ai)
 {
@@ -216,18 +217,18 @@ int NBodyCalc::initParticlesHost()
     return 0;
 }
 
-int NBodyCalc::runSimulation(int steps, float dt, void (*updateFunc)())
+int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
 {
     float dt2 = dt * dt;
 
     int grid_dim = N / p; // TODO: probably fix type
-    for (int i = 0; i < steps; i++) {
+    for (int i = 0; i < steps; i++) { // NOTE: this is currently also our render cycle
         calculate_forces<<<grid_dim,p>>>(d_pos, d_vel, d_acc, N, p, dt, dt2); // Note: also inculdes integration step
 
         cudaDeviceSynchronize();
 
         // TODO: update Screen, if updated ->
-        updateFunc(); // TODO: call before calculations, calculations probably take longer than rendering
+        vis->updateScreen(); // TODO: call before calculations, calculations probably take longer than rendering
         // TODO: swap buffers (Note: use PBO - Pixel Buffer Object in OpenGL)
     }
 

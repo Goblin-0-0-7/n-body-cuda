@@ -80,7 +80,18 @@ void createNattachShaders(unsigned int* shaderProgram)
     glDeleteShader(fragmentShader);
 }
 
-int initGL()
+Visualizer::Visualizer()
+{
+    window = nullptr;
+};
+
+Visualizer::~Visualizer()
+{
+    /* properly clean/delete all GLFW resources */
+    glfwTerminate();
+}
+
+int Visualizer::initGL()
 {
     /* instantiate GLFW window */
     glfwInit();
@@ -89,7 +100,7 @@ int initGL()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* create window object */
-    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -111,7 +122,6 @@ int initGL()
     /* register callback function for resizing (update viewport on resize) */
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     
-    unsigned int shaderProgram;
     createNattachShaders(&shaderProgram);
 
     ///* define vertices for triangle */
@@ -144,7 +154,7 @@ int initGL()
     unsigned int VBO;
     glGenBuffers(1, &VBO);
     /* generate vertex array object */
-    unsigned int VAO;
+    //unsigned int VAO;
     glGenVertexArrays(1, &VAO);
 
     /* bind the Vertex Array Object first, then bindand set vertex buffer(s), and then configure vertex attributes(s). */
@@ -163,8 +173,36 @@ int initGL()
     glEnableVertexAttribArray(0);
 
     
-    /* render loop */
-    while (!glfwWindowShouldClose(window))
+    ///* render loop */
+    //while (!glfwWindowShouldClose(window))
+    //{
+    //    /* input */
+    //    processInput(window);
+
+    //    /* rendering comands here */
+    //    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    //    glClear(GL_COLOR_BUFFER_BIT);
+
+    //    /* drawing */
+    //    glUseProgram(shaderProgram);
+    //    glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+    //    /* draw triangle */
+    //    //glPointSize(10);
+    //    glDrawArrays(GL_TRIANGLES, 0, 6); // GL_POINTS
+    //    /* draw rectangle */
+    //    //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    //    glBindVertexArray(0);
+
+    //    /* check and call events and swap the buffers */
+    //    glfwSwapBuffers(window);
+    //    glfwPollEvents();
+    //}
+    return 0;
+}
+
+void Visualizer::updateScreen()
+{
+    if (!glfwWindowShouldClose(window))
     {
         /* input */
         processInput(window);
@@ -187,13 +225,9 @@ int initGL()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-    /* properly clean/delete all GLFW resources */
-    glfwTerminate();
-    return 0;
-}
-
-void updateScreen()
-{
-
+    else
+    {
+        /* properly clean/delete all GLFW resources */
+        glfwTerminate();
+    }
 }

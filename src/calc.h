@@ -1,4 +1,9 @@
+#ifndef CALC_H
+#define CALC_H
+
 #include <cuda_runtime.h>
+
+#include "visuals.h"
 
 /* const definitions */
 #define EPS 0.01 // softening factor
@@ -34,5 +39,7 @@ public:
 	NBodyCalc();
 	~NBodyCalc();
 	int initCalc(int N, int p, float partWeight, range3 posRange, range3 velRange, range3 accRange);
-	int runSimulation(int steps, float dt, void (*updateFunc)());
+	int runSimulation(int steps, float dt, Visualizer* vis);
 };
+
+#endif	

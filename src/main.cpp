@@ -14,7 +14,7 @@ int main() {
 	float steps = 10000;
 	float L = 3; // box width (in meter?)
 
-	range3 posRange, accRange;
+	range3 posRange, velRange, accRange;
 	/* ranges for the initial position of the particles */
 	posRange.xMin = -1;
 	posRange.xMax = -posRange.xMin;
@@ -22,7 +22,14 @@ int main() {
 	posRange.yMax = posRange.xMax;
 	posRange.zMin = posRange.xMin;
 	posRange.zMax = posRange.xMax;
-	/* ranges for the initial position of the particles */
+	/* ranges for the initial velocity of the particles */
+	velRange.xMin = 0;
+	velRange.xMax = -velRange.xMin;
+	velRange.yMin = velRange.xMin;
+	velRange.yMax = velRange.xMax;
+	velRange.zMin = velRange.xMin;
+	velRange.zMax = velRange.xMax;
+	/* ranges for the initial acceleration of the particles */
 	accRange.xMin = 0;
 	accRange.xMax = -accRange.xMin;
 	accRange.yMin = accRange.xMin;
@@ -34,16 +41,25 @@ int main() {
 	float partWeight = 1;
 
 	NBodyCalc* cudaSim = new NBodyCalc();
+	Visualizer* viziepop = new Visualizer();
 
-	failure = cudaSim->initCalc(N, p, partWeight, posRange, accRange);
+	failure = cudaSim->initCalc(N, p, partWeight, posRange, velRange, accRange);
 	if (failure) {
-		std::cout << "ERROR::CALC::INIsTIALIZATION_FAILED\n" << std::endl;
+		std::cout << "ERROR::CALC::INITIALIZATION_FAILED\n" << std::endl;
 		return 1;
 	}
 
-	cudaSim->runSimulation(steps, dt, &updateScreen);
+	failure = viziepop->initGL(); // TODO: add error handling to initGL
+	if (failure) {
+		std::cout << "ERROR::VISUALIZER::INITIALIZATION_FAILED\n" << std::endl;
+		return 1;
+	}
 
+	cudaSim->runSimulation(steps, dt, viziepop);
+	
+	std::cin.ignore(); // TODO: improve closing
 
-	initGL();
+	delete cudaSim;
+	delete viziepop;
 	return 0;
 }
