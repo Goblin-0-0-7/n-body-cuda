@@ -45,9 +45,9 @@ __device__ float3 tile_calculation(float4 myPosition, float3 accel)
 
 __device__ void updatePos(float4* pos, float4* vel, float4* acc, float dt, float dt2)
 {
-    pos->x += 0.5 * acc->x * dt2 + vel->x * dt;
-    pos->y += 0.5 * acc->y * dt2 + vel->y * dt;
-    pos->z += 0.5 * acc->z + dt2 + vel->z * dt;
+    pos->x += 0.5f * acc->x * dt2 + vel->x * dt;
+    pos->y += 0.5f * acc->y * dt2 + vel->y * dt;
+    pos->z += 0.5f * acc->z * dt2 + vel->z * dt;
 }
 
 __device__ void updateVel(float4* vel, float4* acc, float dt)
@@ -74,13 +74,14 @@ __device__ void updateVelImediate(float4* vel, float3* acc, float dt)
 
 __global__ void integrate(float4* pos, float4* vel, float4* acc, float dt, float dt2)
 {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int idx = blockIdx.x * blockDim.x + threadIdx.x; // TODO: verify idx counting
     float4* globalX = (float4*)pos;
     float4* globalV = (float4*)vel;
     float4* globalA = (float4*)acc;
 
-    updatePos(&globalX[idx], &globalV[idx], &globalA[idx], dt, dt2);
+    // TODO: update first velocity or first acceleration?
     updateVel(&globalV[idx], &globalA[idx], dt);
+    updatePos(&globalX[idx], &globalV[idx], &globalA[idx], dt, dt2);
 }
 
 
@@ -224,10 +225,12 @@ int NBodyCalc::initParticlesHost()
         h_pos[i].y = posRange.yMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (posRange.yMax - posRange.yMin)));
         h_pos[i].z = posRange.zMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (posRange.zMax - posRange.zMin)));
 
+        h_vel[i].w = 0;
         h_vel[i].x = velRange.xMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (velRange.xMax - velRange.xMin)));
         h_vel[i].y = velRange.yMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (velRange.yMax - velRange.yMin)));
         h_vel[i].z = velRange.zMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (velRange.zMax - velRange.zMin)));
 
+        h_acc[i].w = 0;
         h_acc[i].x = accRange.xMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (accRange.xMax - accRange.xMin)));
         h_acc[i].y = accRange.yMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (accRange.yMax - accRange.yMin)));
         h_acc[i].z = accRange.zMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (accRange.zMax - accRange.zMin)));
@@ -254,7 +257,7 @@ int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
     for (int i = 0; i < steps; i++) { // NOTE: this is currently also our render cycle
         calculate_forces<<<grid_dim,p>>>(d_pos, d_vel, d_acc, N, p, dt, dt2); // Note: also inculdes integration step
         cudaDeviceSynchronize();
-        integrate<<<1,N>>>(d_pos, d_vel, d_acc, dt, dt2);
+        integrate<<<1,N>>>(d_pos, d_vel, d_acc, dt, dt2); // TODO: improve block / thread call
         cudaDeviceSynchronize();
         
         if (saveToFile) {
