@@ -1,5 +1,8 @@
-﻿  main.cpp
-D:\Programming\n-body-cuda\src\main.cpp(58,25): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-  visuals.cpp
-  Generating Code...
+﻿  Compiling CUDA source file ..\src\calc.cu...
+  
+  D:\Programming\n-body-cuda\vsproj>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\bin\nvcc.exe" -gencode=arch=compute_52,code=\"sm_52,compute_52\" --use-local-env -ccbin "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64" -x cu   -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\include"  -G   --keep-dir nbody\x64\Debug  -maxrregcount=0    --machine 64 --compile -cudart static  -g  -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MDd " -Xcompiler "/Fd..\bin\intmed\Debug\vc143.pdb" -o ..\bin\cuda\calc.cu.obj "D:\Programming\n-body-cuda\src\calc.cu" 
+CUDACOMPILE : nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+  calc.cu
+  tmpxft_000069c8_00000000-7_calc.cudafe1.cpp
+D:\Programming\n-body-cuda\src\calc.cu(193): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
   nbody.vcxproj -> D:\Programming\n-body-cuda\bin\Debug\nbody.exe

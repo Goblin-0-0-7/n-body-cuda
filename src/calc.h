@@ -34,12 +34,18 @@ private:
 	float4* d_vel;
 	float4* d_acc;
 
+	bool saveToFile;
+	int saveStep;
+	char configFileName[512] = { 0 };
+
 	int initParticlesHost();
 public:
 	NBodyCalc();
 	~NBodyCalc();
 	int initCalc(int N, int p, float partWeight, range3 posRange, range3 velRange, range3 accRange);
 	int runSimulation(int steps, float dt, Visualizer* vis);
+	void saveFileConfig(const char* name, int saveStep);
+	void saveConfiguration(int step);
 };
 
 #endif	

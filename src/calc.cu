@@ -4,6 +4,8 @@
 #include <ctime>
 #include <random>
 #include <iostream>
+#include <fstream>
+#include <string>
 
 #include "calc.h"
 #include "visuals.h"
@@ -226,9 +228,15 @@ int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
         calculate_forces<<<grid_dim,p>>>(d_pos, d_vel, d_acc, N, p, dt, dt2); // Note: also inculdes integration step
 
         cudaDeviceSynchronize();
+        
+        if (saveToFile) {
+            if (i % saveStep == 0) {
+                saveConfiguration(i);
+            }
+        }
 
         // TODO: update Screen, if updated ->
-        vis->updateScreen(); // TODO: call before calculations, calculations probably take longer than rendering
+        //vis->updateScreen(); // TODO: call before calculations, calculations probably take longer than rendering
         // TODO: swap buffers (Note: use PBO - Pixel Buffer Object in OpenGL)
     }
 
@@ -247,4 +255,40 @@ int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
             h_acc[i].x, h_acc[i].y, h_acc[i].z);
     }
     return 0;
+}
+
+
+void NBodyCalc::saveFileConfig(const char* name, int saveStep)
+{
+    saveToFile = true;
+    this->saveStep = saveStep;
+    strcpy(configFileName, name);
+    std::ofstream saveFile("lastSimulation.txt");
+
+    saveConfiguration(-1);
+
+}
+
+void NBodyCalc::saveConfiguration(int step)
+{
+    std::ofstream saveFile;
+    saveFile.open(configFileName, std::ios::app);
+
+    saveFile << "Iteration Step: " << std::dec << step << "\n";
+
+    if (saveFile.is_open()) {
+        cudaMemcpy(h_pos, d_pos, N * sizeof(float4), cudaMemcpyDeviceToHost);
+
+        for (int i = 0; i < N; i++) {
+
+            saveFile << std::to_string(h_pos[i].x) << " " << std::to_string(h_pos[i].y) << " " << std::to_string(h_pos[i].z) << " " << "\n";
+        }
+
+        saveFile.close();
+
+        std::cout << "Successfully saved iteration: " << step << std::endl;
+    }
+    else {
+        std::cout << "Error: Failed to create or open the file." << std::endl;
+    }
 }

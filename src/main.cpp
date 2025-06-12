@@ -43,17 +43,19 @@ int main() {
 	NBodyCalc* cudaSim = new NBodyCalc();
 	Visualizer* viziepop = new Visualizer();
 
+	failure = viziepop->initGL(); // TODO: add error handling to initGL
+	if (failure) {
+		std::cout << "ERROR::VISUALIZER::INITIALIZATION_FAILED\n" << std::endl;
+		return 1;
+	}
+
 	failure = cudaSim->initCalc(N, p, partWeight, posRange, velRange, accRange);
 	if (failure) {
 		std::cout << "ERROR::CALC::INITIALIZATION_FAILED\n" << std::endl;
 		return 1;
 	}
 
-	failure = viziepop->initGL(); // TODO: add error handling to initGL
-	if (failure) {
-		std::cout << "ERROR::VISUALIZER::INITIALIZATION_FAILED\n" << std::endl;
-		return 1;
-	}
+	cudaSim->saveFileConfig("lastSimulation.txt", 10);
 
 	cudaSim->runSimulation(steps, dt, viziepop);
 	
