@@ -43,18 +43,44 @@ __device__ float3 tile_calculation(float4 myPosition, float3 accel)
 }
 
 
-__device__ void updatePos(float4* pos, float4* vel, float3* acc, float dt, float dt2)
+__device__ void updatePos(float4* pos, float4* vel, float4* acc, float dt, float dt2)
 {
     pos->x += 0.5 * acc->x * dt2 + vel->x * dt;
     pos->y += 0.5 * acc->y * dt2 + vel->y * dt;
     pos->z += 0.5 * acc->z + dt2 + vel->z * dt;
 }
 
-__device__ void updateVel(float4* vel, float3* acc, float dt)
+__device__ void updateVel(float4* vel, float4* acc, float dt)
 {
     vel->x += acc->x * dt;
     vel->y += acc->y * dt;
     vel->z += acc->z * dt;
+}
+
+__device__ void updatePosImediate(float4* pos, float4* vel, float3* acc, float dt, float dt2)
+{
+    pos->x += 0.5 * acc->x * dt2 + vel->x * dt;
+    pos->y += 0.5 * acc->y * dt2 + vel->y * dt;
+    pos->z += 0.5 * acc->z + dt2 + vel->z * dt;
+}
+
+__device__ void updateVelImediate(float4* vel, float3* acc, float dt)
+{
+    vel->x += acc->x * dt;
+    vel->y += acc->y * dt;
+    vel->z += acc->z * dt;
+}
+
+
+__global__ void integrate(float4* pos, float4* vel, float4* acc, float dt, float dt2)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    float4* globalX = (float4*)pos;
+    float4* globalV = (float4*)vel;
+    float4* globalA = (float4*)acc;
+
+    updatePos(&globalX[idx], &globalV[idx], &globalA[idx], dt, dt2);
+    updateVel(&globalV[idx], &globalA[idx], dt);
 }
 
 
@@ -80,9 +106,10 @@ __global__ void calculate_forces(void* devX, void*devV, void* devA, int N, int p
     // Save the result in global memory for the integration step. // Note: for the next step, the integration is already done here
     float4 acc4 = {acc.x, acc.y, acc.z, 0.0f};
     globalA[gtid] = acc4;
+    // TODO: test if this change improves performance
     // Already update position here when acceleration is already in shared memory
-    updateVel(&globalV[gtid], &acc, dt); // TODO: does this really speed things up, what memory calls are really done?
-    updatePos(&globalX[gtid], &globalV[gtid], &acc, dt, dt2);
+    //updateVelImidiate(&globalV[gtid], &acc, dt); // TODO: does this really speed things up, what memory calls are really done?
+    //updatePosImidiate(&globalX[gtid], &globalV[gtid], &acc, dt, dt2);
     }
 
 NBodyCalc::NBodyCalc() {
@@ -226,7 +253,8 @@ int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
     int grid_dim = N / p; // TODO: probably fix type
     for (int i = 0; i < steps; i++) { // NOTE: this is currently also our render cycle
         calculate_forces<<<grid_dim,p>>>(d_pos, d_vel, d_acc, N, p, dt, dt2); // Note: also inculdes integration step
-
+        cudaDeviceSynchronize();
+        integrate<<<1,N>>>(d_pos, d_vel, d_acc, dt, dt2);
         cudaDeviceSynchronize();
         
         if (saveToFile) {
@@ -258,15 +286,15 @@ int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
 }
 
 
-void NBodyCalc::saveFileConfig(const char* name, int saveStep)
+void NBodyCalc::saveFileConfig(std::string name, int saveStep)
 {
     saveToFile = true;
     this->saveStep = saveStep;
-    strcpy(configFileName, name);
-    std::ofstream saveFile("lastSimulation.txt");
+
+    configFileName = "..\\log\\" + name + ".txt";
+    std::ofstream saveFile(configFileName);
 
     saveConfiguration(-1);
-
 }
 
 void NBodyCalc::saveConfiguration(int step)

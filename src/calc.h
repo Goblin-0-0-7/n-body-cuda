@@ -36,7 +36,7 @@ private:
 
 	bool saveToFile;
 	int saveStep;
-	char configFileName[512] = { 0 };
+	std::string configFileName;
 
 	int initParticlesHost();
 public:
@@ -44,7 +44,7 @@ public:
 	~NBodyCalc();
 	int initCalc(int N, int p, float partWeight, range3 posRange, range3 velRange, range3 accRange);
 	int runSimulation(int steps, float dt, Visualizer* vis);
-	void saveFileConfig(const char* name, int saveStep);
+	void saveFileConfig(std::string name, int saveStep);
 	void saveConfiguration(int step);
 };
 

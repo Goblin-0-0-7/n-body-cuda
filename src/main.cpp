@@ -10,7 +10,7 @@ int main() {
 	/* Default Configuration */
 	int N = 10; // Number of particles
 	int p = 2; // Threads per block / Block dimension (how many?)
-	float dt = 1.0f; // Time step (second?)
+	float dt = 0.0000001f; // Time step (second?)
 	float steps = 10000;
 	float L = 3; // box width (in meter?)
 
@@ -38,7 +38,7 @@ int main() {
 	accRange.zMax = accRange.xMax;
 
 	// TODO: ranges for the initial weight of the particles
-	float partWeight = 1;
+	float partWeight = 0.001;
 
 	NBodyCalc* cudaSim = new NBodyCalc();
 	Visualizer* viziepop = new Visualizer();
@@ -55,7 +55,7 @@ int main() {
 		return 1;
 	}
 
-	cudaSim->saveFileConfig("lastSimulation.txt", 10);
+	cudaSim->saveFileConfig("lastSimulation", 10);
 
 	cudaSim->runSimulation(steps, dt, viziepop);
 	
