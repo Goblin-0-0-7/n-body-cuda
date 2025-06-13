@@ -8,8 +8,8 @@ int main() {
 	int failure;
 
 	/* Default Configuration */
-	int N = 10; // Number of particles
 	int p = 2; // Threads per block / Block dimension (how many?)
+	int N = 10; // Number of particles
 	float dt = 0.001f; // Time step (second?)
 	float steps = 10000;
 	float L = 3; // box width (in meter?)

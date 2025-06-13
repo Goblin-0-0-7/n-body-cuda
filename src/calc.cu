@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <filesystem>
 
 #include "calc.h"
 #include "visuals.h"
@@ -75,6 +76,7 @@ __device__ void updateVelImediate(float4* vel, float3* acc, float dt)
 __global__ void integrate(float4* pos, float4* vel, float4* acc, float dt, float dt2)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x; // TODO: verify idx counting
+    // TODO: add security if more threads called than particles
     float4* globalX = (float4*)pos;
     float4* globalV = (float4*)vel;
     float4* globalA = (float4*)acc;
@@ -218,7 +220,7 @@ int NBodyCalc::initParticlesHost()
     }
 
     /* Initialize particles on host ? (for now yes, but probably faster on gpu) */
-    srand(std::time({})); // initialise seed
+    srand((unsigned int) std::time({})); // initialise seed
     for (int i = 0; i < N; i++) {
         h_pos[i].w = partWeight;
         h_pos[i].x = posRange.xMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (posRange.xMax - posRange.xMin)));
@@ -253,11 +255,24 @@ int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
 {
     float dt2 = dt * dt;
 
+    /* ------------------------------- Threads and Blocks ------------------------------- *\
+    ** - 1 block == max. 1024 threads                                                     **
+    ** - 1 warp == 32 or 64 threads (threads get executed in groups/warps)                **
+    ** - 1 SM (streaming multiprocessor) = can run 1024 or 2048 threads at any given time **
+    ** - SM: depend on graphics card                                                      **
+    \* ---------------------------------------------------------------------------------- */
+
+    // TODO: thread block size should always be a multiple of 32
     int grid_dim = N / p; // TODO: probably fix type
+    
+    int block_num_integrate = (int)ceil(N / 1024.0f);
+    int blocksize_integrate = (N >= 1024) ? 1024 : N;
+
     for (int i = 0; i < steps; i++) { // NOTE: this is currently also our render cycle
-        calculate_forces<<<grid_dim,p>>>(d_pos, d_vel, d_acc, N, p, dt, dt2); // Note: also inculdes integration step
-        cudaDeviceSynchronize();
-        integrate<<<1,N>>>(d_pos, d_vel, d_acc, dt, dt2); // TODO: improve block / thread call
+        // TODO: calculate_forces does not jet have block/thread oversaturation handling
+        calculate_forces<<<grid_dim,p>>>(d_pos, d_vel, d_acc, N, p, dt, dt2);
+        // TODO: integrate does not jet have block/thread oversaturation handling
+        integrate<<<block_num_integrate, blocksize_integrate >>>(d_pos, d_vel, d_acc, dt, dt2);
         cudaDeviceSynchronize();
         
         if (saveToFile) {
@@ -295,6 +310,7 @@ void NBodyCalc::saveFileConfig(std::string name, int saveStep)
     this->saveStep = saveStep;
 
     configFileName = "..\\log\\" + name + ".txt";
+    std::filesystem::create_directory("..\\log");
     std::ofstream saveFile(configFileName);
 
     saveConfiguration(-1);
@@ -320,6 +336,6 @@ void NBodyCalc::saveConfiguration(int step)
         std::cout << "Successfully saved iteration: " << step << std::endl;
     }
     else {
-        std::cout << "Error: Failed to create or open the file." << std::endl;
+        std::cout << "Error: Failed to create or open the file:" << configFileName << std::endl;
     }
 }

@@ -32,7 +32,7 @@ fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
 # Draw a box centered at the origin with side length 1
-r = 0.5
+r = 1
 box_points = [
     [-r, -r, -r], [ r, -r, -r], [ r,  r, -r], [-r,  r, -r],  # bottom face
     [-r, -r,  r], [ r, -r,  r], [ r,  r,  r], [-r,  r,  r],  # top face
