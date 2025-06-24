@@ -1,0 +1,2 @@
+https://en.wikipedia.org/wiki/Leapfrog_integration
+https://en.wikipedia.org/wiki/Verlet_integration

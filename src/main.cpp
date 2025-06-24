@@ -7,11 +7,14 @@
 int main() {
 	int failure;
 
+	// TODO: load from config file
 	/* Default Configuration */
-	int p = 2; // Threads per block / Block dimension (how many?)
-	int N = 10; // Number of particles
-	float dt = 0.001f; // Time step (second?)
-	float steps = 10000;
+	int Ns[11] = { 1024, 2048, 3072, 4069, 5120, 6144, 8192, 10240, 15360, 16384, 20480 }; // multiple of 1024
+	int Ps[] = { 2, 4, 8, 16, 32, 64, 128 }; // multiple of 2
+	int N = Ns[0]; // Number of particles ()
+	int p = Ps[3]; // Threads per block / Block dimension
+	float dt = 0.00001f; // Time step (second?)
+	int steps = 100000;
 	float L = 3; // box width (in meter?)
 
 	range3 posRange, velRange, accRange;
@@ -55,7 +58,10 @@ int main() {
 		return 1;
 	}
 
-	cudaSim->saveFileConfig("lastSimulation", 10);
+	int num_configValues = 500;
+	cudaSim->saveFileConfig("lastSimulation", steps / num_configValues);
+	int num_energyValues = 50;
+	cudaSim->saveFileEnergy("lastEnergy", steps / num_energyValues);
 
 	cudaSim->runSimulation(steps, dt, viziepop);
 	

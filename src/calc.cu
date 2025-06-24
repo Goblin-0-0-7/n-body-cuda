@@ -11,6 +11,11 @@
 #include "calc.h"
 #include "visuals.h"
 
+/* Position Algorithm */ // TODO: make this a variable and special functions
+#define EULER
+//#define LEAPFROG
+//#define VERLET
+
 __device__ float3 bodyBodyInteraction(float4 bi, float4 bj, float3 ai)
 {
     float3 r;
@@ -38,9 +43,120 @@ __device__ float3 tile_calculation(float4 myPosition, float3 accel)
     int i;
     extern __shared__ float4 shPosition[];
     for (i = 0; i < blockDim.x; i++) {
-    accel = bodyBodyInteraction(myPosition, shPosition[i], accel);
+        accel = bodyBodyInteraction(myPosition, shPosition[i], accel);
     }
     return accel;
+}
+
+
+__global__ void calculate_forces(void* devX, void* devV, void* devA, int N, int p, float dt, float dt2)
+{
+    extern __shared__ float4 shPosition[];
+    float4* globalX = (float4*)devX;
+    //const autofloat4* globalV = (float4*)devV;
+    float4* globalA = (float4*)devA;
+    float4 myPosition;
+    int i, tile;
+    float3 acc = { 0.0f, 0.0f, 0.0f };
+    int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    myPosition = globalX[gtid];
+    for (i = 0, tile = 0; i < N; i += p, tile++) { // N needs to be divisible by p
+        int idx = tile * blockDim.x + threadIdx.x;
+        shPosition[threadIdx.x] = globalX[idx]; // TODO: understand this call
+        __syncthreads();
+        acc = tile_calculation(myPosition, acc);
+        __syncthreads();
+    }
+    // Save the result in global memory for the integration step. // Note: for the next step, the integration is already done here
+    float4 acc4 = { acc.x, acc.y, acc.z, 0.0f };
+    globalA[gtid] = acc4;
+    // TODO: test if this change improves performance
+    // Already update position here when acceleration is already in shared memory
+    //updateVelImidiate(&globalV[gtid], &acc, dt); // TODO: does this really speed things up, what memory calls are really done?
+    //updatePosImidiate(&globalX[gtid], &globalV[gtid], &acc, dt, dt2);
+}
+
+/*  -----------------------------------------------  *\
+**                Energy Calculations                **
+\*  -----------------------------------------------  */
+
+__device__ float calcVelEnergy(float4 pos, float4 vel)
+{
+    float vel2 = vel.x + vel.y + vel.z;
+    return 0.5f * pos.w * vel2;
+}
+
+
+__device__ float calcPotEnergy(float4 myPos, float4 posj, float myEnergy)
+{
+    float dx = myPos.x - posj.x;
+    float dy = myPos.y - posj.y;
+    float dz = myPos.z - posj.z;
+    float dr = sqrtf(dx * dx + dy * dy + dz * dz); // add softening factor?
+    if (dr != 0) { // skip i == j this way
+        myEnergy += (myPos.w * myPos.w) / dr;
+    }
+    return myEnergy;
+}
+
+
+__device__ float energyTileCalculation(float4 myPosition, float myEnergy)
+{
+    extern __shared__ float4 shPosition[];
+    for (int i = 0; i < blockDim.x; i++) {
+        myEnergy = calcPotEnergy(myPosition, shPosition[i], myEnergy);
+    }
+    return myEnergy;
+}
+
+
+__global__ void calcEnergy(float4* pos, float4* vel, float* energy, int N, int p)
+{
+    extern __shared__ float4 shPosition[];
+    float4* globalX = (float4*)pos;
+    float4* globalV = (float4*)vel;
+    float* globalE = (float*)energy;
+    float4 myPosition;
+    int i, tile;
+    float myEnergy = 0;
+    int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    myPosition = globalX[gtid];
+
+    myEnergy = calcVelEnergy(myPosition, globalV[gtid]);
+
+    for (i = 0, tile = 0; i < N; i += p, tile++) { // N needs to be divisible by p
+        int idx = tile * blockDim.x + threadIdx.x;
+        shPosition[threadIdx.x] = globalX[idx];
+        __syncthreads();
+        myEnergy = energyTileCalculation(myPosition, myEnergy);
+        __syncthreads();
+    }
+    // Save the result in global memory
+    globalE[gtid] = myEnergy;
+}
+
+
+__global__ void sumEnergy(float* energy)
+{
+    int tid = threadIdx.x;
+
+    auto step_size = 1;
+    int number_of_threads = blockDim.x;
+
+    while (number_of_threads > 0)
+    {
+        if (tid < number_of_threads)
+        {
+            const auto fst = tid * step_size * 2;
+            const auto snd = fst + step_size;
+            energy[fst] += energy[snd];
+        }
+
+        step_size <<= 1;
+        number_of_threads >>= 1;
+    }
 }
 
 
@@ -73,47 +189,75 @@ __device__ void updateVelImediate(float4* vel, float3* acc, float dt)
 }
 
 
-__global__ void integrate(float4* pos, float4* vel, float4* acc, float dt, float dt2)
+__device__ void updateVelVerlet(float4* vel, float4* acc, float dt)
 {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x; // TODO: verify idx counting
-    // TODO: add security if more threads called than particles
-    float4* globalX = (float4*)pos;
-    float4* globalV = (float4*)vel;
-    float4* globalA = (float4*)acc;
+    vel->x += 0.5f + acc->x * dt;
+    vel->y += 0.5f + acc->y * dt;
+    vel->z += 0.5f + acc->z * dt;
+}
 
-    // TODO: update first velocity or first acceleration?
-    updateVel(&globalV[idx], &globalA[idx], dt);
-    updatePos(&globalX[idx], &globalV[idx], &globalA[idx], dt, dt2);
+__device__ void updatePosVerlet(float4* pos, float4* vel, float4* acc, float dt)
+{
+    pos->x += vel->x * dt;
+    pos->y += vel->y * dt;
+    pos->z += vel->z * dt;
 }
 
 
-__global__ void calculate_forces(void* devX, void*devV, void* devA, int N, int p, float dt, float dt2)
+__global__ void integrateEuler(int N, float4* pos, float4* vel, float4* acc, float dt, float dt2)
 {
-    extern __shared__ float4 shPosition[];
-    float4 *globalX = (float4 *)devX;
-    float4* globalV = (float4 *)devV;
-    float4 *globalA = (float4 *)devA;
-    float4 myPosition;
-    int i, tile;
-    float3 acc = {0.0f, 0.0f, 0.0f};
-    int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+    int idx = blockIdx.x * blockDim.x + threadIdx.x; // TODO: verify idx counting
+    if (idx < N) {
+        float4* globalX = (float4*)pos;
+        float4* globalV = (float4*)vel;
+        float4* globalA = (float4*)acc;
 
-    myPosition = globalX[gtid];
-    for (i = 0, tile = 0; i < N; i += p, tile++) { // N needs to be divisible by p
-        int idx = tile * blockDim.x + threadIdx.x;
-        shPosition[threadIdx.x] = globalX[idx]; // TODO: understand this call
-        __syncthreads();
-        acc = tile_calculation(myPosition, acc);
-        __syncthreads();
+        /* update first position with old velocity to keep  *\
+        **     x_n+1 = x_n + v_n * dt + 1/2 a_n * dt2       **
+        ** true. Afterwards velocity can be updated to v_n+1 */
+        updatePos(&globalX[idx], &globalV[idx], &globalA[idx], dt, dt2);
+        updateVel(&globalV[idx], &globalA[idx], dt);
     }
-    // Save the result in global memory for the integration step. // Note: for the next step, the integration is already done here
-    float4 acc4 = {acc.x, acc.y, acc.z, 0.0f};
-    globalA[gtid] = acc4;
-    // TODO: test if this change improves performance
-    // Already update position here when acceleration is already in shared memory
-    //updateVelImidiate(&globalV[gtid], &acc, dt); // TODO: does this really speed things up, what memory calls are really done?
-    //updatePosImidiate(&globalX[gtid], &globalV[gtid], &acc, dt, dt2);
+}
+
+
+//__global__ void integrateLeapfrog(int N, float4* pos, float4* vel, float4* acc, float dt, float dt2)
+//{
+//    int idx = blockIdx.x * blockDim.x + threadIdx.x; // TODO: verify idx counting
+//    if (idx < N) {
+//        float4* globalX = (float4*)pos;
+//        float4* globalV = (float4*)vel;
+//        float4* globalA = (float4*)acc;
+//
+//        updateVel(&globalV[idx], &globalA[idx], dt);
+//        updatePos(&globalX[idx], &globalV[idx], &globalA[idx], dt, dt2);
+//    }
+//}
+
+
+__global__ void integrateVerlet1(int N, float4* pos, float4* vel, float4* acc, float dt)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x; // TODO: verify idx counting
+    if (idx < N) {
+        float4* globalX = (float4*)pos;
+        float4* globalV = (float4*)vel;
+        float4* globalA = (float4*)acc;
+
+        updateVelVerlet(&globalV[idx], &globalA[idx], dt);
+        updatePosVerlet(&globalX[idx], &globalV[idx], &globalA[idx], dt);
     }
+}
+
+__global__ void integrateVerlet2(int N, float4* vel, float4* acc, float dt)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x; // TODO: verify idx counting
+    if (idx < N) {
+        float4* globalV = (float4*)vel;
+        float4* globalA = (float4*)acc;
+
+        updateVel(&globalV[idx], &globalA[idx], dt);
+    }
+}
 
 NBodyCalc::NBodyCalc() {
     N = 10;
@@ -143,6 +287,10 @@ NBodyCalc::NBodyCalc() {
     d_pos = nullptr;
     d_vel = nullptr;
     d_acc = nullptr;
+
+    energyInterval = 50;
+    h_energy = 0;
+    d_energy = nullptr;
 }
 
 NBodyCalc::~NBodyCalc() {
@@ -150,6 +298,7 @@ NBodyCalc::~NBodyCalc() {
     free(h_acc);
     free(d_pos);
     free(d_acc);
+    free(d_energy);
 
     // cudaDeviceReset must be called before exiting in order for profiling and
     // tracing tools such as Nsight and Visual Profiler to show complete traces.
@@ -189,11 +338,15 @@ int NBodyCalc::initCalc(int N, int p, float partWeight, range3 posRange, range3 
     cudaError_t d_pos_err = cudaMalloc(&d_pos, N * sizeof(float4));
     cudaError_t d_vel_err = cudaMalloc(&d_vel, N * sizeof(float4));
     cudaError_t d_acc_err = cudaMalloc(&d_acc, N * sizeof(float4));
+    cudaError_t d_energy_err = cudaMalloc(&d_energy, N * sizeof(float));
 
-    if (!h_pos || !h_vel || !h_acc || d_pos_err != cudaSuccess || d_vel_err != cudaSuccess || d_acc_err != cudaSuccess) {
+    if (!h_pos || !h_vel || !h_acc || d_pos_err != cudaSuccess || d_vel_err != cudaSuccess || d_acc_err != cudaSuccess || d_energy_err != cudaSuccess) {
         std::cout << "ERROR::CALC::MALLOC_FAILED\n" << std::endl;
         return 1;
     }
+
+    /* Initialise energy */
+    cudaMemset(d_energy, 0, N);
 
     failure = initParticlesHost(); // TODO: run with cuda
     if (failure) {
@@ -269,13 +422,40 @@ int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
     int blocksize_integrate = (N >= 1024) ? 1024 : N;
 
     for (int i = 0; i < steps; i++) { // NOTE: this is currently also our render cycle
+        /* Save Energy before first calculation */
+        if (bsaveEnergy) {
+            if (i % energyInterval == 0) {
+                calcEnergy<<<grid_dim, p>>>(d_pos, d_vel, d_energy, N, p);
+                cudaDeviceSynchronize();
+                sumEnergy<<<1, N / 2>>>(d_energy); // will probably work only good with max of 1024 particles
+                cudaDeviceSynchronize();
+                cudaMemcpy(&h_energy, d_energy, sizeof(float), cudaMemcpyDeviceToHost);
+                saveEnergy(h_energy, i);
+                cudaMemset(d_energy, 0, N);
+
+
+#ifdef EULER
         // TODO: calculate_forces does not jet have block/thread oversaturation handling
-        calculate_forces<<<grid_dim,p>>>(d_pos, d_vel, d_acc, N, p, dt, dt2);
-        // TODO: integrate does not jet have block/thread oversaturation handling
-        integrate<<<block_num_integrate, blocksize_integrate >>>(d_pos, d_vel, d_acc, dt, dt2);
+        calculate_forces<<<grid_dim, p>>>(d_pos, d_vel, d_acc, N, p, dt, dt2);
         cudaDeviceSynchronize();
-        
-        if (saveToFile) {
+        integrateEuler<<<block_num_integrate, blocksize_integrate>>>(N, d_pos, d_vel, d_acc, dt, dt2);
+        cudaDeviceSynchronize();
+#endif
+
+#ifdef LEAPFROG
+        // TODO: implement
+#endif
+
+#ifdef VERLET
+        calculate_forces<<<grid_dim, p>>>(d_pos, d_vel, d_acc, N, p, dt, dt2);
+        integrateVerlet1<<<block_num_integrate, blocksize_integrate>>>(N, d_pos, d_vel, d_acc, dt);
+        cudaDeviceSynchronize();
+        integrateVerlet2<<<block_num_integrate, blocksize_integrate>>>(N, d_vel, d_acc, dt);
+#endif
+         }
+        }
+
+        if (bsaveConfig) {
             if (i % saveStep == 0) {
                 saveConfiguration(i);
             }
@@ -306,7 +486,7 @@ int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
 
 void NBodyCalc::saveFileConfig(std::string name, int saveStep)
 {
-    saveToFile = true;
+    bsaveConfig = true;
     this->saveStep = saveStep;
 
     configFileName = "..\\log\\" + name + ".txt";
@@ -321,9 +501,10 @@ void NBodyCalc::saveConfiguration(int step)
     std::ofstream saveFile;
     saveFile.open(configFileName, std::ios::app);
 
-    saveFile << "Iteration Step: " << std::dec << step << "\n";
-
     if (saveFile.is_open()) {
+
+        saveFile << "Iteration Step: " << std::dec << step << "\n";
+
         cudaMemcpy(h_pos, d_pos, N * sizeof(float4), cudaMemcpyDeviceToHost);
 
         for (int i = 0; i < N; i++) {
@@ -337,5 +518,32 @@ void NBodyCalc::saveConfiguration(int step)
     }
     else {
         std::cout << "Error: Failed to create or open the file:" << configFileName << std::endl;
+    }
+}
+
+void NBodyCalc::saveFileEnergy(std::string name, int energyInterval)
+{
+    bsaveEnergy = true;
+    this->energyInterval = energyInterval;
+
+    energyFileName = "..\\log\\" + name + ".txt";
+    std::filesystem::create_directory("..\\log");
+    std::ofstream saveFile(energyFileName);
+}
+
+void NBodyCalc::saveEnergy(float energy, int step)
+{
+    std::ofstream saveFile;
+    saveFile.open(energyFileName, std::ios::app);
+
+    if (saveFile.is_open()) {
+        saveFile << step << ", " << energy << std::endl;
+        saveFile.close();
+
+
+        std::cout << "Successfully saved energy: " << step << std::endl;
+    }
+    else {
+        std::cout << "Error: Failed to open the energy file: " << energyFileName << std::endl;
     }
 }

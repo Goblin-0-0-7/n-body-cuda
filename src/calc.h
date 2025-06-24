@@ -34,7 +34,14 @@ private:
 	float4* d_vel;
 	float4* d_acc;
 
-	bool saveToFile;
+	bool bsaveEnergy;
+	int energyInterval;
+	std::string energyFileName;
+	float h_energy;
+	float* d_energy;
+
+
+	bool bsaveConfig;
 	int saveStep;
 	std::string configFileName;
 
@@ -46,6 +53,8 @@ public:
 	int runSimulation(int steps, float dt, Visualizer* vis);
 	void saveFileConfig(std::string name, int saveStep);
 	void saveConfiguration(int step);
+	void saveFileEnergy(std::string name, int energyInterval);
+	void saveEnergy(float energy, int step);
 };
 
 #endif	
