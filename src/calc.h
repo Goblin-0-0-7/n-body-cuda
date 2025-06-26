@@ -36,24 +36,24 @@ private:
 
 	bool bsaveEnergy;
 	int energyInterval;
-	std::string energyFileName;
+	std::filesystem::path energyFilePath;
 	float h_energy;
 	float* d_energy;
 
 
 	bool bsaveConfig;
 	int saveStep;
-	std::string configFileName;
+	std::filesystem::path configFilePath;
 
 	int initParticlesHost();
 public:
 	NBodyCalc();
 	~NBodyCalc();
 	int initCalc(int N, int p, float partWeight, range3 posRange, range3 velRange, range3 accRange);
-	int runSimulation(int steps, float dt, Visualizer* vis);
-	void saveFileConfig(std::string name, int saveStep);
+	int runSimulation(int steps, float dt);
+	void saveFileConfig(std::string name, int saveStep, std::filesystem::path outFolder);
 	void saveConfiguration(int step);
-	void saveFileEnergy(std::string name, int energyInterval);
+	void saveFileEnergy(std::string name, int energyInterval, std::filesystem::path outFolder);
 	void saveEnergy(float energy, int step);
 };
 

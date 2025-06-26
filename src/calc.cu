@@ -391,20 +391,10 @@ int NBodyCalc::initParticlesHost()
         h_acc[i].z = accRange.zMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (accRange.zMax - accRange.zMin)));
     }
 
-    /* print values for debugging */
-    printf("Initial particles:\n");
-    for (int i = 0; i < N; i++) {
-        printf("Particle %d: Position (%f, %f, %f), Velocity (%f, %f, %f), Acceleration (%f, %f, %f)\n",
-            i,
-            h_pos[i].x, h_pos[i].y, h_pos[i].z,
-            h_vel[i].x, h_vel[i].y, h_vel[i].z,
-            h_acc[i].x, h_acc[i].y, h_acc[i].z);
-    }
-
     return 0;
 }
 
-int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
+int NBodyCalc::runSimulation(int steps, float dt)
 {
     float dt2 = dt * dt;
 
@@ -455,11 +445,11 @@ int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
          }
         }
 
-        if (bsaveConfig) {
+        /*if (bsaveConfig) {
             if (i % saveStep == 0) {
                 saveConfiguration(i);
             }
-        }
+        }*/
 
         // TODO: update Screen, if updated ->
         //vis->updateScreen(); // TODO: call before calculations, calculations probably take longer than rendering
@@ -471,27 +461,18 @@ int NBodyCalc::runSimulation(int steps, float dt, Visualizer* vis)
     cudaMemcpy(h_vel, d_vel, N * sizeof(float4), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_acc, d_acc, N * sizeof(float4), cudaMemcpyDeviceToHost);
 
-    /* print particle values after simulation */
-    printf("Simulated particles:\n");
-    for (int i = 0; i < N; i++) {
-        printf("Particle %d: Position (%f, %f, %f), Velocity (%f, %f, %f), Acceleration (%f, %f, %f)\n",
-            i,
-            h_pos[i].x, h_pos[i].y, h_pos[i].z,
-            h_vel[i].x, h_vel[i].y, h_vel[i].z,
-            h_acc[i].x, h_acc[i].y, h_acc[i].z);
-    }
     return 0;
 }
 
 
-void NBodyCalc::saveFileConfig(std::string name, int saveStep)
+void NBodyCalc::saveFileConfig(std::string name, int saveStep, std::filesystem::path outFolder)
 {
     bsaveConfig = true;
     this->saveStep = saveStep;
-
-    configFileName = "..\\log\\" + name + ".txt";
-    std::filesystem::create_directory("..\\log");
-    std::ofstream saveFile(configFileName);
+    
+    std::string fileName = name + ".txt";
+    configFilePath = outFolder / fileName;
+    std::ofstream saveFile(configFilePath.string());
 
     saveConfiguration(-1);
 }
@@ -499,7 +480,7 @@ void NBodyCalc::saveFileConfig(std::string name, int saveStep)
 void NBodyCalc::saveConfiguration(int step)
 {
     std::ofstream saveFile;
-    saveFile.open(configFileName, std::ios::app);
+    saveFile.open(configFilePath.string(), std::ios::app);
 
     if (saveFile.is_open()) {
 
@@ -517,33 +498,40 @@ void NBodyCalc::saveConfiguration(int step)
         std::cout << "Successfully saved iteration: " << step << std::endl;
     }
     else {
-        std::cout << "Error: Failed to create or open the file:" << configFileName << std::endl;
+        std::cout << "Error: Failed to create or open the file:" << configFilePath << std::endl;
     }
 }
 
-void NBodyCalc::saveFileEnergy(std::string name, int energyInterval)
+void NBodyCalc::saveFileEnergy(std::string name, int energyInterval, std::filesystem::path outFolder)
 {
     bsaveEnergy = true;
     this->energyInterval = energyInterval;
 
-    energyFileName = "..\\log\\" + name + ".txt";
-    std::filesystem::create_directory("..\\log");
-    std::ofstream saveFile(energyFileName);
+    std::string fileName = name + ".txt";
+    energyFilePath = outFolder / fileName;
+    std::ofstream saveFile(energyFilePath.string());
+
+    if (saveFile.is_open()) {
+        saveFile << "Step,Energy" <<  std::endl;
+    }
+    else {
+        std::cout << "Error: Failed to open the energy file: " << energyFilePath << std::endl;
+    }
 }
 
 void NBodyCalc::saveEnergy(float energy, int step)
 {
     std::ofstream saveFile;
-    saveFile.open(energyFileName, std::ios::app);
+    saveFile.open(energyFilePath.string(), std::ios::app);
 
     if (saveFile.is_open()) {
-        saveFile << step << ", " << energy << std::endl;
+        saveFile << step << "," << energy << std::endl;
         saveFile.close();
 
 
         std::cout << "Successfully saved energy: " << step << std::endl;
     }
     else {
-        std::cout << "Error: Failed to open the energy file: " << energyFileName << std::endl;
+        std::cout << "Error: Failed to open the energy file: " << energyFilePath << std::endl;
     }
 }

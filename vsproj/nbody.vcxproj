@@ -15,11 +15,13 @@
     <CudaCompile Include="..\src\calc.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\autotest.cpp" />
     <ClCompile Include="..\src\glad.c" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\visuals.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\autotest.h" />
     <ClInclude Include="..\src\calc.h" />
     <ClInclude Include="..\src\visuals.h" />
   </ItemGroup>
