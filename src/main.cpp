@@ -17,20 +17,16 @@ int main(int argc, char* argv[]) {
 
 	int num_energyValues, num_configValues, num_gpuValues;
 	bool testing = false;
+	int num_tests = 0;
 	std::string testFilePath;
 	Test* test;
 	std::vector<Test> tests;
 
-
-	std::cout << "params n " << argc << std::endl;
 	/* Handle arguments */
 	for (int i = 0; i < argc; i++) {
-		std::cout << argv[i] << std::endl;
 		if (std::strcmp(argv[i], "-t") == 0) {
-			std::cout << "-t recognised" << std::endl;
 			if (i + 1 < argc) {
 				testFilePath = argv[i + 1];
-				std::cout << "filepath " << testFilePath << std::endl;
 				testing = true;
 			}
 		}
@@ -90,10 +86,17 @@ int main(int argc, char* argv[]) {
         json testData;
 		std::ifstream testFile(testFilePath);
         if (testFile.is_open()) {
-			testFile >> testData; // TODO: raise json paring error
+			try {
+				testFile >> testData;
+			}
+			catch (const json::parse_error& e) {
+				std::cerr << "JSON parse error at byte " << e.byte << ": " << e.what() << std::endl;
+				testFile.close();
+				return 1;
+			}
 			
 			/* Generate Tests */
-			for (const auto& [testName, params] : testData["test-cases"].items()) {
+			for (const auto& [testName, params] : testData["test_cases"].items()) {
 				N = params["N"];
 				p = params["p"];
 				dt = params["dt"];
@@ -119,16 +122,26 @@ int main(int argc, char* argv[]) {
             std::cerr << "Error: Could not open " << testFilePath << std::endl;
         }
 
+		if (tests.empty()) {
+			std::cerr << "Error: No tests found in file" << std::endl;
+			return 1;
+		}
+		
+		num_tests = tests.size();
+		std::cout << num_tests << " tests in queue." << std::endl;
+
 		std::cout << "Running Tests" << std::endl;
 		/* Run tests */
+		int testID = 1;
 		for (Test testCase : tests) {
-			std::cout << "Start test " << testCase.getName() << std::endl;
+			std::cout << "Start test " << testID << "/" << num_tests << ": \"" << testCase.getName() << "\"" << std::endl;
 			testCase.runTest();
-			std::cout << "Finished test " << testCase.getName() << " successfully" << std::endl;
+			std::cout << "Finished test " << testID << "/" << num_tests << ": \"" << testCase.getName() << " \" successfully." << std::endl;
+			testID++;
 		}
 	}
 	else {
-		failure = cudaSim->initCalc(N, p, partWeight, posRange, velRange, accRange);
+		failure = cudaSim->initCalc(N, p, partWeight, posRange, velRange, accRange, EULER);
 		if (failure) {
 			std::cout << "ERROR::CALC::INITIALIZATION_FAILED\n" << std::endl;
 			return 1;

@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <iostream>
 #include <fstream>
+#include <ctime>
 
 #include "autotest.h"
 #include "calc.h"
@@ -41,7 +42,7 @@ Test::Test(int N, int p, float dt, int steps, std::string testname)
 	accRange.zMin = accRange.xMin;
 	accRange.zMax = accRange.xMax;
 
-	sim->initCalc(N, p, partWeight, posRange, velRange, accRange);
+	sim->initCalc(N, p, partWeight, posRange, velRange, accRange, EULER);
 
 	outPath = std::filesystem::path("../testresults") / testname;
 	std::filesystem::create_directories(outPath);
@@ -58,7 +59,12 @@ Test::~Test()
 
 void Test::runTest()
 {
+	startTime = clock();
 	sim->runSimulation(steps, dt);
+	endTime = clock();
+	testTime = double(endTime - startTime) / CLOCKS_PER_SEC;
+
+	saveTestEval();
 }
 
 void Test::addEnergyEval(int num_values)
@@ -82,4 +88,18 @@ void Test::addConfigEval(int num_values)
 	evalConfig = true;
 
 	sim->saveFileConfig("config", steps / num_values, outPath);
+}
+
+void Test::saveTestEval()
+{
+	std::ofstream saveFile;
+	saveFile.open(outFilePath.string(), std::ios::app);
+
+	if (saveFile.is_open()) {
+		saveFile << "Test duration: " << testTime << " s" << std::endl;
+		std::cout << "Successfully saved test evaluation: " << std::endl;
+	}
+	else {
+		std::cout << "Error: Failed to open the energy file: " << outFilePath << std::endl;
+	}
 }

@@ -11,11 +11,6 @@
 #include "calc.h"
 #include "visuals.h"
 
-/* Position Algorithm */ // TODO: make this a variable and special functions
-#define EULER
-//#define LEAPFROG
-//#define VERLET
-
 __device__ float3 bodyBodyInteraction(float4 bi, float4 bj, float3 ai)
 {
     float3 r;
@@ -63,7 +58,7 @@ __global__ void calculate_forces(void* devX, void* devV, void* devA, int N, int 
     myPosition = globalX[gtid];
     for (i = 0, tile = 0; i < N; i += p, tile++) { // N needs to be divisible by p
         int idx = tile * blockDim.x + threadIdx.x;
-        shPosition[threadIdx.x] = globalX[idx]; // TODO: understand this call
+        shPosition[threadIdx.x] = globalX[idx];
         __syncthreads();
         acc = tile_calculation(myPosition, acc);
         __syncthreads();
@@ -308,7 +303,7 @@ NBodyCalc::~NBodyCalc() {
     }
 }
 
-int NBodyCalc::initCalc(int N, int p, float partWeight, range3 posRange, range3 velRange, range3 accRange)
+int NBodyCalc::initCalc(int N, int p, float partWeight, range3 posRange, range3 velRange, range3 accRange, INTEGRATION_METHODS integMethod)
 {
     int failure;
 
@@ -363,8 +358,51 @@ int NBodyCalc::initCalc(int N, int p, float partWeight, range3 posRange, range3 
         return 1;
     }
 
+    setIntegrationMethod(integMethod);
+
     return 0;
 }
+
+
+void NBodyCalc::setIntegrationMethod(INTEGRATION_METHODS integMethod)
+{
+    switch (integMethod) {
+    case EULER:
+        integFunc = &NBodyCalc::runEuler;
+        break;
+    case LEAPFROG:
+        integFunc = &NBodyCalc::runLeapfrog;
+        break;
+    case VERLET:
+        integFunc = &NBodyCalc::runVerlet;
+        break;
+    }
+}
+
+
+void NBodyCalc::runEuler(float dt, float dt2)
+{
+    // TODO: calculate_forces does not jet have block/thread oversaturation handling
+    calculate_forces<<<grid_dim, p, sharedBytes >>>(d_pos, d_vel, d_acc, N, p, dt, dt2);
+    cudaDeviceSynchronize();
+    integrateEuler<<<block_num_integrate, blocksize_integrate>>>(N, d_pos, d_vel, d_acc, dt, dt2);
+    cudaDeviceSynchronize();
+}
+
+void NBodyCalc::runLeapfrog(float dt, float dt2)
+{
+    // TODO: impelmentation
+}
+
+void NBodyCalc::runVerlet(float dt, float dt2)
+{
+    // TODO: calculate_forces does not jet have block/thread oversaturation handling
+    calculate_forces<<<grid_dim, p, sharedBytes>>>(d_pos, d_vel, d_acc, N, p, dt, dt2);
+    integrateVerlet1<<<block_num_integrate, blocksize_integrate>>>(N, d_pos, d_vel, d_acc, dt);
+    cudaDeviceSynchronize();
+    integrateVerlet2<<<block_num_integrate, blocksize_integrate>>>(N, d_vel, d_acc, dt);
+}
+
 
 int NBodyCalc::initParticlesHost()
 {
@@ -396,7 +434,8 @@ int NBodyCalc::initParticlesHost()
 
 int NBodyCalc::runSimulation(int steps, float dt)
 {
-    float dt2 = dt * dt;
+    this->dt = dt;
+    dt2 = dt * dt;
 
     /* ------------------------------- Threads and Blocks ------------------------------- *\
     ** - 1 block == max. 1024 threads                                                     **
@@ -406,50 +445,39 @@ int NBodyCalc::runSimulation(int steps, float dt)
     \* ---------------------------------------------------------------------------------- */
 
     // TODO: thread block size should always be a multiple of 32
-    int grid_dim = N / p; // TODO: probably fix type
+    grid_dim = N / p; // TODO: probably fix type
     
-    int block_num_integrate = (int)ceil(N / 1024.0f);
-    int blocksize_integrate = (N >= 1024) ? 1024 : N;
+    block_num_integrate = (int)ceil(N / 1024.0f);
+    blocksize_integrate = (N >= 1024) ? 1024 : N;
+    sharedBytes = p * sizeof(float);
 
     for (int i = 0; i < steps; i++) { // NOTE: this is currently also our render cycle
         /* Save Energy before first calculation */
         if (bsaveEnergy) {
             if (i % energyInterval == 0) {
-                calcEnergy<<<grid_dim, p>>>(d_pos, d_vel, d_energy, N, p);
+                calcEnergy<<<grid_dim, p, sharedBytes>>>(d_pos, d_vel, d_energy, N, p);
                 cudaDeviceSynchronize();
                 sumEnergy<<<1, N / 2>>>(d_energy); // will probably work only good with max of 1024 particles
                 cudaDeviceSynchronize();
                 cudaMemcpy(&h_energy, d_energy, sizeof(float), cudaMemcpyDeviceToHost);
-                saveEnergy(h_energy, i);
+                saveEnergy(i, h_energy);
                 cudaMemset(d_energy, 0, N);
-
-
-#ifdef EULER
-        // TODO: calculate_forces does not jet have block/thread oversaturation handling
-        calculate_forces<<<grid_dim, p>>>(d_pos, d_vel, d_acc, N, p, dt, dt2);
-        cudaDeviceSynchronize();
-        integrateEuler<<<block_num_integrate, blocksize_integrate>>>(N, d_pos, d_vel, d_acc, dt, dt2);
-        cudaDeviceSynchronize();
-#endif
-
-#ifdef LEAPFROG
-        // TODO: implement
-#endif
-
-#ifdef VERLET
-        calculate_forces<<<grid_dim, p>>>(d_pos, d_vel, d_acc, N, p, dt, dt2);
-        integrateVerlet1<<<block_num_integrate, blocksize_integrate>>>(N, d_pos, d_vel, d_acc, dt);
-        cudaDeviceSynchronize();
-        integrateVerlet2<<<block_num_integrate, blocksize_integrate>>>(N, d_vel, d_acc, dt);
-#endif
-         }
+            }
         }
 
-        /*if (bsaveConfig) {
-            if (i % saveStep == 0) {
+        (this->*integFunc)(dt, dt2);
+
+        if (bsaveConfig) {
+            if (i % configInterval == 0) {
                 saveConfiguration(i);
             }
-        }*/
+        }
+
+        if (bsaveGPU) {
+            if (i % gpuInterval == 0) {
+                saveGPU(i, 0.0f);
+            }
+        }
 
         // TODO: update Screen, if updated ->
         //vis->updateScreen(); // TODO: call before calculations, calculations probably take longer than rendering
@@ -465,10 +493,10 @@ int NBodyCalc::runSimulation(int steps, float dt)
 }
 
 
-void NBodyCalc::saveFileConfig(std::string name, int saveStep, std::filesystem::path outFolder)
+void NBodyCalc::saveFileConfig(std::string name, int interval, std::filesystem::path outFolder)
 {
     bsaveConfig = true;
-    this->saveStep = saveStep;
+    configInterval = interval;
     
     std::string fileName = name + ".txt";
     configFilePath = outFolder / fileName;
@@ -502,10 +530,10 @@ void NBodyCalc::saveConfiguration(int step)
     }
 }
 
-void NBodyCalc::saveFileEnergy(std::string name, int energyInterval, std::filesystem::path outFolder)
+void NBodyCalc::saveFileEnergy(std::string name, int interval, std::filesystem::path outFolder)
 {
     bsaveEnergy = true;
-    this->energyInterval = energyInterval;
+    energyInterval = interval;
 
     std::string fileName = name + ".txt";
     energyFilePath = outFolder / fileName;
@@ -513,13 +541,14 @@ void NBodyCalc::saveFileEnergy(std::string name, int energyInterval, std::filesy
 
     if (saveFile.is_open()) {
         saveFile << "Step,Energy" <<  std::endl;
+        saveFile.close();
     }
     else {
         std::cout << "Error: Failed to open the energy file: " << energyFilePath << std::endl;
     }
 }
 
-void NBodyCalc::saveEnergy(float energy, int step)
+void NBodyCalc::saveEnergy(int step, float energy)
 {
     std::ofstream saveFile;
     saveFile.open(energyFilePath.string(), std::ios::app);
@@ -533,5 +562,41 @@ void NBodyCalc::saveEnergy(float energy, int step)
     }
     else {
         std::cout << "Error: Failed to open the energy file: " << energyFilePath << std::endl;
+    }
+}
+
+
+void NBodyCalc::saveFileGPU(std::string name, int interval, std::filesystem::path outFolder)
+{
+    bsaveGPU = true;
+    energyInterval = interval;
+
+    std::string fileName = name + ".txt";
+    gpuFilePath = outFolder / fileName;
+    std::ofstream saveFile(gpuFilePath.string());
+
+    if (saveFile.is_open()) {
+        saveFile << "Step,GPU-util" << std::endl;
+        saveFile.close();
+    }
+    else {
+        std::cout << "Error: Failed to open the gpu file: " << gpuFilePath << std::endl;
+    }
+}
+
+void NBodyCalc::saveGPU(int step, float gpuUtil)
+{
+    std::ofstream saveFile;
+    saveFile.open(gpuFilePath.string(), std::ios::app);
+
+    if (saveFile.is_open()) {
+        saveFile << step << "," << gpuUtil << std::endl;
+        saveFile.close();
+
+
+        std::cout << "Successfully saved gpu-util: " << step << std::endl;
+    }
+    else {
+        std::cout << "Error: Failed to open the gpu file: " << gpuFilePath << std::endl;
     }
 }
