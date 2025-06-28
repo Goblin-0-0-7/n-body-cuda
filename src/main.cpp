@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
 			std::cout << "Start test " << testID << "/" << num_tests << ": \"" << testCase.getName() << "\"" << std::endl;
 			testCase.runTest();
 			std::cout << "Finished test " << testID << "/" << num_tests << ": \"" << testCase.getName() << " \" successfully." << std::endl;
-			testCase.deleteSim();
+			//testCase.deleteSim();
 			testID++;
 		}
 	}

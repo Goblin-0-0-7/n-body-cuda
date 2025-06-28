@@ -31,7 +31,8 @@ def extractEnergyData(strData):
         if (i == 1):
             base_energy = float(energy_value)
         steps.append(int(step))
-        energy_data.append(float(energy_value) - base_energy)
+        energy_change_perc = (float(energy_value) - base_energy) / base_energy
+        energy_data.append(energy_change_perc)
     return steps, energy_data
 
 def plotTest(ax, steps, energy_data, name:str):
@@ -46,7 +47,7 @@ def plotTest(ax, steps, energy_data, name:str):
 
 def savePlot(ax, name, workdir):
     ax.set_xlabel(r"Steps", fontsize=14) # '$$' enables latex-math_mode
-    ax.set_ylabel(r"$\mathrm{\Delta}$E", fontsize=14)
+    ax.set_ylabel(r"$\frac{\mathrm{\Delta}E}{E}$", fontsize=14)
     plt.legend()
     plt.savefig(workdir + "\\plots\\" + name + ".png")
     plt.close()

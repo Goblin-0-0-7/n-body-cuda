@@ -1,19 +1,19 @@
 {
 	"test_cases": {
-		"1K-density1-8-100nDT": {
+		"1K-density1-8-1uDT": {
 		"N": 1024,
 		"p": 32,
-		"dt": 0.0000001,
+		"dt": 0.00001,
 		"steps": 10000,
 		"clusterCubeWidth": 2,
 		"energy values": 50,
 		"configuration values": 2,
 		"GPU values": 0
 		},
-		"1K-density1-27-100nDT": {
+		"1K-density1-27-1uDT": {
 		"N": 1024,
 		"p": 32,
-		"dt": 0.0000001,
+		"dt": 0.00001,
 		"steps": 10000,
 		"clusterCubeWidth": 3,
 		"energy values": 50,
