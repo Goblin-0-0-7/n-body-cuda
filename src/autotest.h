@@ -35,8 +35,9 @@ private:
 	double testTime = 0;
 
 public:
-	Test(int N, int p, float dt, int steps, std::string testname);
+	Test(int N, int p, float dt, int steps,  std::string testname);
 	~Test();
+	void deleteSim();
 	void runTest();
 	void addEnergyEval(int num_values);
 	void addGPUEval(int num_values);

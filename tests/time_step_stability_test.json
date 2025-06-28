@@ -55,7 +55,6 @@
 		"configuration values": 0,
 		"GPU values": 0
 		},
-		
 		"10KS-10uDT-1KN-64P-EULER": {
 		"N": 1024,
 		"p": 64,
@@ -83,8 +82,7 @@
 		"configuration values": 0,
 		"GPU values": 0
 		},
-		
-				"10KS-10uDT-2KN-16P-EULER": {
+		"10KS-10uDT-2KN-16P-EULER": {
 		"N": 2048,
 		"p": 16,
 		"dt": 0.00001,
@@ -111,7 +109,6 @@
 		"configuration values": 0,
 		"GPU values": 0
 		},
-
 		"10KS-10uDT-2KN-32P-EULER": {
 		"N": 2048,
 		"p": 32,
@@ -139,7 +136,6 @@
 		"configuration values": 0,
 		"GPU values": 0
 		},
-
 		"10KS-10uDT-2KN-64P-EULER": {
 		"N": 2048,
 		"p": 64,
@@ -167,8 +163,7 @@
 		"configuration values": 0,
 		"GPU values": 0
 		},
-		
-				"10KS-10uDT-4KN-16P-EULER": {
+		"10KS-10uDT-4KN-16P-EULER": {
 		"N": 4096,
 		"p": 16,
 		"dt": 0.00001,
@@ -195,7 +190,6 @@
 		"configuration values": 0,
 		"GPU values": 0
 		},
-
 		"10KS-10uDT-4KN-32P-EULER": {
 		"N": 4096,
 		"p": 32,
@@ -223,7 +217,6 @@
 		"configuration values": 0,
 		"GPU values": 0
 		},
-
 		"10KS-10uDT-4KN-64P-EULER": {
 		"N": 4096,
 		"p": 64,
@@ -250,6 +243,6 @@
 		"energy values": 50,
 		"configuration values": 0,
 		"GPU values": 0
-		},
+		}
 	}
 }

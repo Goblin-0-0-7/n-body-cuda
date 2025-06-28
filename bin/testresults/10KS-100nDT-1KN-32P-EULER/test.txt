@@ -1,1 +1,1 @@
-Test duration: 58.368 s
+Test duration: 5.221 s

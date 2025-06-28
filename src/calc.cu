@@ -155,6 +155,10 @@ __global__ void sumEnergy(float* energy)
 }
 
 
+/*  -----------------------------------------------  *\
+**                Integration Methods                **
+\*  -----------------------------------------------  */
+
 __device__ void updatePos(float4* pos, float4* vel, float4* acc, float dt, float dt2)
 {
     pos->x += 0.5f * acc->x * dt2 + vel->x * dt;
@@ -291,9 +295,9 @@ NBodyCalc::NBodyCalc() {
 NBodyCalc::~NBodyCalc() {
     free(h_pos);
     free(h_acc);
-    free(d_pos);
-    free(d_acc);
-    free(d_energy);
+    cudaFree(d_pos);
+    cudaFree(d_acc);
+    cudaFree(d_energy);
 
     // cudaDeviceReset must be called before exiting in order for profiling and
     // tracing tools such as Nsight and Visual Profiler to show complete traces.
@@ -397,10 +401,12 @@ void NBodyCalc::runLeapfrog(float dt, float dt2)
 void NBodyCalc::runVerlet(float dt, float dt2)
 {
     // TODO: calculate_forces does not jet have block/thread oversaturation handling
+    integrateVerlet1 << <block_num_integrate, blocksize_integrate >> > (N, d_pos, d_vel, d_acc, dt);
+    cudaDeviceSynchronize();
     calculate_forces<<<grid_dim, p, sharedBytes>>>(d_pos, d_vel, d_acc, N, p, dt, dt2);
-    integrateVerlet1<<<block_num_integrate, blocksize_integrate>>>(N, d_pos, d_vel, d_acc, dt);
     cudaDeviceSynchronize();
     integrateVerlet2<<<block_num_integrate, blocksize_integrate>>>(N, d_vel, d_acc, dt);
+    cudaDeviceSynchronize();
 }
 
 

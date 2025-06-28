@@ -1,7 +1,20 @@
 import os
+import json
 import matplotlib.pyplot as plt
 
-testname = "SampleTest1"
+gpu = "A1000"
+testtitle = "time_step_stability_test - verlet"
+
+def readTestFile(filedir):
+    with open(filedir, 'r') as f:
+        data = json.load(f)
+    return data
+
+def getTestNames(json_data):
+    test_names: list[str] = []
+    for test in json_data["test_cases"]:
+        test_names.append(test)
+    return test_names
 
 def loadEnergyStr(filedir):
     with open(filedir, 'r') as f:
@@ -21,21 +34,34 @@ def extractEnergyData(strData):
         energy_data.append(float(energy_value) - base_energy)
     return steps, energy_data
 
+def plotTest(ax, steps, energy_data, name:str):
 
+    ax.plot(
+        steps,
+        energy_data,
+        marker = "+",
+        linestyle = "-",
+        label = name
+    )
+
+def savePlot(ax, name, workdir):
+    ax.set_xlabel(r"Steps", fontsize=14) # '$$' enables latex-math_mode
+    ax.set_ylabel(r"$\mathrm{\Delta}$E", fontsize=14)
+    plt.legend()
+    plt.savefig(workdir + "\\plots\\" + name + ".png")
+    plt.close()
+    print(f"Saved {name} plot.")
+    
 workdir = os.getcwd()
-strData = loadEnergyStr(workdir + f"\\testresults\\{testname}\\energy.txt")
-steps, energy_data = extractEnergyData(strData)
+testData = readTestFile(workdir + f"\\tests\\{testtitle}.json")
+testnames = getTestNames(testData)
 
-fig = plt.figure()
+fig, ax = plt.subplots(figsize= (15, 8.2))
+plt.grid(True)
+for name in testnames:
+    if ("16P" in name):
+        strData = loadEnergyStr(workdir + f"\\testresults\\{name}\\energy.txt")
+        steps, energy_data = extractEnergyData(strData)
+        plotTest(ax, steps, energy_data, name)
+savePlot(ax, f"{gpu}-energy-Verlet", workdir)
 
-plt.plot(
-    steps,
-    energy_data,
-    marker = "+",
-    linestyle = "-",
-    color = "blue"
-)
-
-# TODO: Set title
-
-plt.show()

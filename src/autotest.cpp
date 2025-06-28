@@ -42,7 +42,7 @@ Test::Test(int N, int p, float dt, int steps, std::string testname)
 	accRange.zMin = accRange.xMin;
 	accRange.zMax = accRange.xMax;
 
-	sim->initCalc(N, p, partWeight, posRange, velRange, accRange, EULER);
+	sim->initCalc(N, p, partWeight, posRange, velRange, accRange, VERLET);
 
 	outPath = std::filesystem::path("../testresults") / testname;
 	std::filesystem::create_directories(outPath);
@@ -54,6 +54,11 @@ Test::Test(int N, int p, float dt, int steps, std::string testname)
 Test::~Test()
 {
 
+}
+
+void Test::deleteSim()
+{
+	delete sim;
 }
 
 
