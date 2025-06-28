@@ -1,6 +1,6 @@
 {
 	"test_cases": {
-		"10KS-10uDT-1KN-16P-EULER": {
+		"10KS-10uDT-1KN-16P-VERLET": {
 		"N": 1024,
 		"p": 16,
 		"dt": 0.00001,
@@ -9,7 +9,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-1uDT-1KN-16P-EULER": {
+		"10KS-1uDT-1KN-16P-VERLET": {
 		"N": 1024,
 		"p": 16,
 		"dt": 0.000001,
@@ -18,7 +18,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-100nDT-1KN-16P-EULER": {
+		"10KS-100nDT-1KN-16P-VERLET": {
 		"N": 1024,
 		"p": 16,
 		"dt": 0.0000001,
@@ -28,7 +28,7 @@
 		"GPU values": 0
 		},
 		
-		"10KS-10uDT-1KN-32P-EULER": {
+		"10KS-10uDT-1KN-32P-VERLET": {
 		"N": 1024,
 		"p": 32,
 		"dt": 0.00001,
@@ -37,7 +37,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-1uDT-1KN-32P-EULER": {
+		"10KS-1uDT-1KN-32P-VERLET": {
 		"N": 1024,
 		"p": 32,
 		"dt": 0.000001,
@@ -46,7 +46,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-100nDT-1KN-32P-EULER": {
+		"10KS-100nDT-1KN-32P-VERLET": {
 		"N": 1024,
 		"p": 32,
 		"dt": 0.0000001,
@@ -55,7 +55,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-10uDT-1KN-64P-EULER": {
+		"10KS-10uDT-1KN-64P-VERLET": {
 		"N": 1024,
 		"p": 64,
 		"dt": 0.00001,
@@ -64,7 +64,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-1uDT-1KN-64P-EULER": {
+		"10KS-1uDT-1KN-64P-VERLET": {
 		"N": 1024,
 		"p": 64,
 		"dt": 0.000001,
@@ -73,7 +73,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-100nDT-1KN-64P-EULER": {
+		"10KS-100nDT-1KN-64P-VERLET": {
 		"N": 1024,
 		"p": 64,
 		"dt": 0.0000001,
@@ -82,7 +82,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-10uDT-2KN-16P-EULER": {
+		"10KS-10uDT-2KN-16P-VERLET": {
 		"N": 2048,
 		"p": 16,
 		"dt": 0.00001,
@@ -91,7 +91,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-1uDT-2KN-16P-EULER": {
+		"10KS-1uDT-2KN-16P-VERLET": {
 		"N": 2048,
 		"p": 16,
 		"dt": 0.000001,
@@ -100,7 +100,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-100nDT-2KN-16P-EULER": {
+		"10KS-100nDT-2KN-16P-VERLET": {
 		"N": 2048,
 		"p": 16,
 		"dt": 0.0000001,
@@ -109,7 +109,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-10uDT-2KN-32P-EULER": {
+		"10KS-10uDT-2KN-32P-VERLET": {
 		"N": 2048,
 		"p": 32,
 		"dt": 0.00001,
@@ -118,7 +118,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-1uDT-2KN-32P-EULER": {
+		"10KS-1uDT-2KN-32P-VERLET": {
 		"N": 2048,
 		"p": 32,
 		"dt": 0.000001,
@@ -127,7 +127,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-100nDT-2KN-32P-EULER": {
+		"10KS-100nDT-2KN-32P-VERLET": {
 		"N": 2048,
 		"p": 32,
 		"dt": 0.0000001,
@@ -136,7 +136,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-10uDT-2KN-64P-EULER": {
+		"10KS-10uDT-2KN-64P-VERLET": {
 		"N": 2048,
 		"p": 64,
 		"dt": 0.00001,
@@ -145,7 +145,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-1uDT-2KN-64P-EULER": {
+		"10KS-1uDT-2KN-64P-VERLET": {
 		"N": 2048,
 		"p": 64,
 		"dt": 0.000001,
@@ -154,7 +154,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-100nDT-2KN-64P-EULER": {
+		"10KS-100nDT-2KN-64P-VERLET": {
 		"N": 2048,
 		"p": 64,
 		"dt": 0.0000001,
@@ -163,7 +163,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-10uDT-4KN-16P-EULER": {
+		"10KS-10uDT-4KN-16P-VERLET": {
 		"N": 4096,
 		"p": 16,
 		"dt": 0.00001,
@@ -172,7 +172,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-1uDT-4KN-16P-EULER": {
+		"10KS-1uDT-4KN-16P-VERLET": {
 		"N": 4096,
 		"p": 16,
 		"dt": 0.000001,
@@ -181,7 +181,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-100nDT-4KN-16P-EULER": {
+		"10KS-100nDT-4KN-16P-VERLET": {
 		"N": 4096,
 		"p": 16,
 		"dt": 0.0000001,
@@ -190,7 +190,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-10uDT-4KN-32P-EULER": {
+		"10KS-10uDT-4KN-32P-VERLET": {
 		"N": 4096,
 		"p": 32,
 		"dt": 0.00001,
@@ -199,7 +199,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-1uDT-4KN-32P-EULER": {
+		"10KS-1uDT-4KN-32P-VERLET": {
 		"N": 4096,
 		"p": 32,
 		"dt": 0.000001,
@@ -208,7 +208,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-100nDT-4KN-32P-EULER": {
+		"10KS-100nDT-4KN-32P-VERLET": {
 		"N": 4096,
 		"p": 32,
 		"dt": 0.0000001,
@@ -217,7 +217,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-10uDT-4KN-64P-EULER": {
+		"10KS-10uDT-4KN-64P-VERLET": {
 		"N": 4096,
 		"p": 64,
 		"dt": 0.00001,
@@ -226,7 +226,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-1uDT-4KN-64P-EULER": {
+		"10KS-1uDT-4KN-64P-VERLET": {
 		"N": 4096,
 		"p": 64,
 		"dt": 0.000001,
@@ -235,7 +235,7 @@
 		"configuration values": 100,
 		"GPU values": 0
 		},
-		"10KS-100nDT-4KN-64P-EULER": {
+		"10KS-100nDT-4KN-64P-VERLET": {
 		"N": 4096,
 		"p": 64,
 		"dt": 0.0000001,

@@ -13,11 +13,11 @@ using json = nlohmann::json;
 int main(int argc, char* argv[]) {
 	int failure;
 	int N, p, steps;
-	float dt;
+	float dt, clusterCubeWidth;
 
 	int num_energyValues, num_configValues, num_gpuValues;
 	bool testing = false;
-	int num_tests = 0;
+	size_t num_tests = 0;
 	std::string testFilePath;
 	Test* test;
 	std::vector<Test> tests;
@@ -101,11 +101,12 @@ int main(int argc, char* argv[]) {
 				p = params["p"];
 				dt = params["dt"];
 				steps = params["steps"];
+				clusterCubeWidth = params["clusterCubeWidth"];
 				num_energyValues = params["energy values"];
 				num_configValues = params["configuration values"];
 				num_gpuValues = params["GPU values"];
 
-				test = new Test(N, p, dt, steps, testName);
+				test = new Test(N, p, dt, steps, clusterCubeWidth, testName);
 				if (num_energyValues) {
 					test->addEnergyEval(num_energyValues);
 				}

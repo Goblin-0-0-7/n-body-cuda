@@ -3,7 +3,7 @@ import json
 import matplotlib.pyplot as plt
 
 gpu = "A1000"
-testtitle = "time_step_stability_test - verlet"
+testtitle = "density_test"
 
 def readTestFile(filedir):
     with open(filedir, 'r') as f:
@@ -59,9 +59,8 @@ testnames = getTestNames(testData)
 fig, ax = plt.subplots(figsize= (15, 8.2))
 plt.grid(True)
 for name in testnames:
-    if ("16P" in name):
-        strData = loadEnergyStr(workdir + f"\\testresults\\{name}\\energy.txt")
-        steps, energy_data = extractEnergyData(strData)
-        plotTest(ax, steps, energy_data, name)
-savePlot(ax, f"{gpu}-energy-Verlet", workdir)
+    strData = loadEnergyStr(workdir + f"\\testresults\\{name}\\energy.txt")
+    steps, energy_data = extractEnergyData(strData)
+    plotTest(ax, steps, energy_data, name)
+savePlot(ax, f"{testtitle}-{gpu}-energy", workdir)
 
