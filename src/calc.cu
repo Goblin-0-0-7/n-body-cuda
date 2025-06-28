@@ -455,7 +455,14 @@ int NBodyCalc::runSimulation(int steps, float dt)
     
     block_num_integrate = (int)ceil(N / 1024.0f);
     blocksize_integrate = (N >= 1024) ? 1024 : N;
-    sharedBytes = p * sizeof(float);
+    sharedBytes = p * sizeof(float4);
+
+    /* Check for hardware parameters */
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, 0); // 0 = device ID
+    assert(p <= prop.maxThreadsPerBlock);
+    assert((int)(N / 2) <= prop.maxThreadsPerBlock);
+    assert(blocksize_integrate <= prop.maxThreadsPerBlock);
 
     for (int i = 0; i < steps; i++) { // NOTE: this is currently also our render cycle
         /* Save Energy before first calculation */
@@ -472,6 +479,12 @@ int NBodyCalc::runSimulation(int steps, float dt)
         }
 
         (this->*integFunc)(dt, dt2);
+
+        /* Check for any cuda errors */
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess) {
+            printf("CUDA error: %s\n", cudaGetErrorString(err));
+        }
 
         if (bsaveConfig) {
             if (i % configInterval == 0) {
