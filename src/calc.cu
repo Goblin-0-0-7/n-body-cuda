@@ -133,9 +133,31 @@ __global__ void calcEnergy(float4* pos, float4* vel, float* energy, int N, int p
 }
 
 
-__global__ void sumEnergy(float* energy)
+__global__ void reduce1(float* energy, int start_step_size = 1)
 {
     int tid = threadIdx.x;
+
+    auto step_size = start_step_size;
+    int number_of_threads = blockDim.x;
+
+    while (number_of_threads > 0)
+    {
+        if (tid < number_of_threads)
+        {
+            const auto fst = tid * step_size * 2;
+            const auto snd = fst + step_size;
+            energy[fst] += energy[snd];
+        }
+
+        step_size <<= 1;
+        number_of_threads >>= 1;
+    }
+}
+
+
+__global__ void reduce2(float* energy)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
     auto step_size = 1;
     int number_of_threads = blockDim.x;
@@ -443,6 +465,11 @@ int NBodyCalc::runSimulation(int steps, float dt)
     this->dt = dt;
     dt2 = dt * dt;
 
+    /* Progessbar params */
+    float progress;
+    int barWidth = 50;
+    int pos;
+
     /* ------------------------------- Threads and Blocks ------------------------------- *\
     ** - 1 block == max. 1024 threads                                                     **
     ** - 1 warp == 32 or 64 threads (threads get executed in groups/warps)                **
@@ -461,7 +488,6 @@ int NBodyCalc::runSimulation(int steps, float dt)
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0); // 0 = device ID
     assert(p <= prop.maxThreadsPerBlock);
-    assert((int)(N / 2) <= prop.maxThreadsPerBlock);
     assert(blocksize_integrate <= prop.maxThreadsPerBlock);
 
     for (int i = 0; i < steps; i++) { // NOTE: this is currently also our render cycle
@@ -470,8 +496,7 @@ int NBodyCalc::runSimulation(int steps, float dt)
             if (i % energyInterval == 0) {
                 calcEnergy<<<grid_dim, p, sharedBytes>>>(d_pos, d_vel, d_energy, N, p);
                 cudaDeviceSynchronize();
-                sumEnergy<<<1, N / 2>>>(d_energy); // will probably work only good with max of 1024 particles
-                cudaDeviceSynchronize();
+                sumEnergy();
                 cudaMemcpy(&h_energy, d_energy, sizeof(float), cudaMemcpyDeviceToHost);
                 saveEnergy(i, h_energy);
                 cudaMemset(d_energy, 0, N);
@@ -498,6 +523,21 @@ int NBodyCalc::runSimulation(int steps, float dt)
             }
         }
 
+        if (isPerformanceTest) { // Print status to know programm is running fine
+            if (i % perfInterval == 0) {
+                std::cout << "\r[";
+                for (int j = 0; j < barWidth; ++j) {
+                    progress = 100.0f * i / steps;
+                    pos = static_cast<int>(barWidth * progress / 100.0f);
+                    if (j < pos) std::cout << "=";
+                    else if (j == pos) std::cout << ">";
+                    else std::cout << " ";
+                }
+                std::cout << "] " << int(progress) << " %";
+                std::cout.flush();
+            }
+        }
+
         // TODO: update Screen, if updated ->
         //vis->updateScreen(); // TODO: call before calculations, calculations probably take longer than rendering
         // TODO: swap buffers (Note: use PBO - Pixel Buffer Object in OpenGL)
@@ -509,6 +549,24 @@ int NBodyCalc::runSimulation(int steps, float dt)
     cudaMemcpy(h_acc, d_acc, N * sizeof(float4), cudaMemcpyDeviceToHost);
 
     return 0;
+}
+
+/* Note: works probably only for even N, N <= 2048 or N multiple of 2048 */
+void NBodyCalc::sumEnergy()
+{
+    if (N <= 2048) {
+        reduce1<<<1, N / 2>>>(d_energy);
+        cudaDeviceSynchronize();
+    }
+    else {
+        int grid_size = ceil(N / 2048.0f);
+        int block_size = 1024;
+        reduce2<<<grid_size, block_size>>>(d_energy);
+        cudaDeviceSynchronize();
+        reduce1<<<1, grid_size>>>(d_energy, block_size * 2);
+        cudaDeviceSynchronize();
+
+    }
 }
 
 
@@ -618,4 +676,10 @@ void NBodyCalc::saveGPU(int step, float gpuUtil)
     else {
         std::cout << "Error: Failed to open the gpu file: " << gpuFilePath << std::endl;
     }
+}
+
+void NBodyCalc::setIsPerformanceTest(int steps)
+{
+    isPerformanceTest = true;
+    perfInterval = steps / 10;
 }

@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
 				num_configValues = params["configuration values"];
 				num_gpuValues = params["GPU values"];
 
-				test = new Test(N, p, dt, steps, clusterCubeWidth, testName);
+				test = new Test(N, p, dt, steps, clusterCubeWidth, EULER, testName);
 				if (num_energyValues) {
 					test->addEnergyEval(num_energyValues);
 				}

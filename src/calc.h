@@ -46,16 +46,23 @@ private:
 	int sharedBytes;
 	void (NBodyCalc::* integFunc)(float, float);
 
+	/* Performance Test variables */
+	bool isPerformanceTest = true;
+	int perfInterval;
+
+	/* Energy Test variables */
 	bool bsaveEnergy = false;
 	int energyInterval;
 	std::filesystem::path energyFilePath;
 	float h_energy;
 	float* d_energy;
 
+	/* Configuration Test variables */
 	bool bsaveConfig = false;
 	int configInterval;
 	std::filesystem::path configFilePath;
 
+	/* GPU Test variables */
 	bool bsaveGPU = false;
 	int gpuInterval;
 	std::filesystem::path gpuFilePath;
@@ -70,12 +77,14 @@ public:
 	void runEuler(float dt, float dt2);
 	void runLeapfrog(float dt, float dt2);
 	void runVerlet(float dt, float dt2);
+	void sumEnergy();
 	void saveFileConfig(std::string name, int interval, std::filesystem::path outFolder);
 	void saveConfiguration(int step);
 	void saveFileEnergy(std::string name, int interval, std::filesystem::path outFolder);
 	void saveEnergy(int step, float energy);
 	void saveFileGPU(std::string name, int interval, std::filesystem::path outFolder);
 	void saveGPU(int step, float gpuUtil);
+	void setIsPerformanceTest(int steps);
 };
 
 #endif	

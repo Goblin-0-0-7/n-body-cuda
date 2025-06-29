@@ -8,12 +8,12 @@
 class Test {
 private:
 	NBodyCalc* sim;
-	/* Simulation parameters */
+	/* Simulation parameters (TODO: make a prop structure) */
 	int N = 0;
 	int p = 0;
 	float dt = 0.0f;
 	int steps = 0;
-	int integMethod = EULER;
+	INTEGRATION_METHODS integMethod = EULER;
 
 	float partWeight = 1;
 	range3 posRange;
@@ -35,7 +35,7 @@ private:
 	double testTime = 0;
 
 public:
-	Test(int N, int p, float dt, int steps, float clusterCubeWidth, std::string testname);
+	Test(int N, int p, float dt, int steps, float clusterCubeWidth, INTEGRATION_METHODS integMethod, std::string testname);
 	~Test();
 	void deleteSim();
 	void runTest();

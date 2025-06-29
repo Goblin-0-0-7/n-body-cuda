@@ -1,0 +1,204 @@
+{
+	"test_cases": {
+		"1K-16P": {
+		"N": 1024,
+		"p": 16,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 4,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"1K-32P": {
+		"N": 1024,
+		"p": 32,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 4,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"1K-64P": {
+		"N": 1024,
+		"p": 64,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 4,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"1K-128P": {
+		"N": 1024,
+		"p": 128,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 4,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"1K-256P": {
+		"N": 1024,
+		"p": 256,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 4,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"2K-16P": {
+		"N": 2048,
+		"p": 16,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 5.04,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"2K-32P": {
+		"N": 2048,
+		"p": 32,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 5.04,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"2K-64P": {
+		"N": 2048,
+		"p": 64,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 5.04,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"2K-128P": {
+		"N": 2048,
+		"p": 128,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 5.04,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"2K-256P": {
+		"N": 2048,
+		"p": 256,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 5.04,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"4K-16P": {
+		"N": 4096,
+		"p": 16,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 6.35,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"4K-32P": {
+		"N": 4096,
+		"p": 32,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 6.35,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"4K-64P": {
+		"N": 4096,
+		"p": 64,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 6.35,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"4K-128P": {
+		"N": 4096,
+		"p": 128,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 6.35,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"4K-256P": {
+		"N": 4096,
+		"p": 256,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 6.35,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"16K-16P": {
+		"N": 16384,
+		"p": 16,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 10.08,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"16K-32P": {
+		"N": 16384,
+		"p": 32,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 10.08,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"16K-64P": {
+		"N": 16384,
+		"p": 64,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 10.08,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"16K-128P": {
+		"N": 16384,
+		"p": 128,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 10.08,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"16K-256P": {
+		"N": 16384,
+		"p": 256,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 10.08,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		}		
+	}
+}

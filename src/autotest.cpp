@@ -9,7 +9,7 @@
 
 // TODO: add func to read test case config file and generate testcases
 
-Test::Test(int N, int p, float dt, int steps, float clusterCubeWidth, std::string testname)
+Test::Test(int N, int p, float dt, int steps, float clusterCubeWidth, INTEGRATION_METHODS integMethod, std::string testname)
 {
 	sim = new NBodyCalc();
 
@@ -19,6 +19,7 @@ Test::Test(int N, int p, float dt, int steps, float clusterCubeWidth, std::strin
 	this->p = p;
 	this->dt = dt;
 	this->steps = steps;
+	this->integMethod = integMethod;
 	
 	/* ranges for the initial position of the particles */
 	posRange.xMin = -(clusterCubeWidth/2);
@@ -42,7 +43,7 @@ Test::Test(int N, int p, float dt, int steps, float clusterCubeWidth, std::strin
 	accRange.zMin = accRange.xMin;
 	accRange.zMax = accRange.xMax;
 
-	sim->initCalc(N, p, partWeight, posRange, velRange, accRange, EULER);
+	sim->initCalc(N, p, partWeight, posRange, velRange, accRange, integMethod);
 
 	outPath = std::filesystem::path("../testresults") / testname;
 	std::filesystem::create_directories(outPath);
@@ -64,6 +65,11 @@ void Test::deleteSim()
 
 void Test::runTest()
 {
+	/* check if this is a performance test */
+	if (!evalEnergy && !evalConfig && !evalGPU) {
+		sim->setIsPerformanceTest(steps);
+	}
+
 	startTime = clock();
 	sim->runSimulation(steps, dt);
 	endTime = clock();

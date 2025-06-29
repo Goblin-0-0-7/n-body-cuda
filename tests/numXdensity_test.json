@@ -1,0 +1,44 @@
+{
+	"test_cases": {
+		"1K-numXdensity1-64-1uDT": {
+		"N": 1024,
+		"p": 32,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 4,
+		"energy values": 50,
+		"configuration values": 2,
+		"GPU values": 0
+		},
+		"2K-numXdensity1-64-1uDT": {
+		"N": 2048,
+		"p": 32,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 5.04,
+		"energy values": 50,
+		"configuration values": 2,
+		"GPU values": 0
+		},
+		"4K-numXdensity1-64-1uDT": {
+		"N": 4096,
+		"p": 32,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 6.35,
+		"energy values": 50,
+		"configuration values": 2,
+		"GPU values": 0
+		},
+		"16K-numXdensity1-64-1uDT": {
+		"N": 16384,
+		"p": 32,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 10.08,
+		"energy values": 50,
+		"configuration values": 2,
+		"GPU values": 0
+		}
+	}
+}
