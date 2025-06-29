@@ -9,7 +9,7 @@
 #include <filesystem>
 
 #include "calc.h"
-#include "visuals.h"
+//#include "visuals.h"
 
 __device__ float3 bodyBodyInteraction(float4 bi, float4 bj, float3 ai)
 {

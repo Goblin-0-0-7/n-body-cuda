@@ -1,0 +1,24 @@
+{
+	"test_cases": {
+		"1K-16P": {
+		"N": 1024,
+		"p": 16,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 4,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"1K-32P": {
+		"N": 1024,
+		"p": 32,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 4,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		}
+	}
+}

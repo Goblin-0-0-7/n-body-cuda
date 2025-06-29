@@ -4,7 +4,7 @@
 using json = nlohmann::json;
 
 #include "calc.h"
-#include "visuals.h"
+//#include "visuals.h"
 #include "autotest.h"
 
 //#define USEGL

@@ -1,0 +1,3 @@
+D:/Programming/n-body-cuda/build/CMakeFiles/nbody.dir
+D:/Programming/n-body-cuda/build/CMakeFiles/ALL_BUILD.dir
+D:/Programming/n-body-cuda/build/CMakeFiles/ZERO_CHECK.dir
