@@ -1,5 +1,4 @@
 #include <cuda_runtime.h>
-#include <windowsnumerics.h>
 #include <cstdlib>
 #include <ctime>
 #include <random>
@@ -7,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include <filesystem>
+#include <cassert>
 
 #include "calc.h"
 //#include "visuals.h"

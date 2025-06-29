@@ -47,7 +47,7 @@ private:
 	void (NBodyCalc::* integFunc)(float, float);
 
 	/* Performance Test variables */
-	bool isPerformanceTest = true;
+	bool isPerformanceTest = false;
 	int perfInterval;
 
 	/* Energy Test variables */

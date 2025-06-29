@@ -1,24 +1,10 @@
-﻿  Compiling CUDA source file ..\ref\kernel.cu...
-  Compiling CUDA source file ..\src\calc.cu...
-  
-  D:\Programming\n-body-cuda\vsproj>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\bin\nvcc.exe" -gencode=arch=compute_52,code=\"sm_52,compute_52\" --use-local-env -ccbin "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64" -x cu   -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\include"     --keep-dir nbody\x64\Release  -maxrregcount=0    --machine 64 --compile -cudart static -std=c++17   -DWIN32 -DWIN64 -DNDEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /FS   /MD " -Xcompiler "/Fd..\bin\intmed\Release\vc143.pdb" -o ..\bin\cuda\kernel.cu.obj "D:\Programming\n-body-cuda\ref\kernel.cu" 
-  
-  D:\Programming\n-body-cuda\vsproj>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\bin\nvcc.exe" -gencode=arch=compute_52,code=\"sm_52,compute_52\" --use-local-env -ccbin "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64" -x cu   -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\include"     --keep-dir nbody\x64\Release  -maxrregcount=0    --machine 64 --compile -cudart static -std=c++17   -DWIN32 -DWIN64 -DNDEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /FS   /MD " -Xcompiler "/Fd..\bin\intmed\Release\vc143.pdb" -o ..\bin\cuda\calc.cu.obj "D:\Programming\n-body-cuda\src\calc.cu" 
-CUDACOMPILE : nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
-  kernel.cu
-  tmpxft_00002de8_00000000-7_kernel.cudafe1.cpp
-CUDACOMPILE : nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
-  calc.cu
-  tmpxft_00001c68_00000000-7_calc.cudafe1.cpp
-D:\Programming\n-body-cuda\src\calc.cu(562): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-  autotest.cpp
+﻿  autotest.cpp
   main.cpp
-  visuals.cpp
-  glad.c
      Creating library ..\bin\Release\nbody.lib and object ..\bin\Release\nbody.exp
-  Previous IPDB not found, fall back to full compilation.
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code
-  All 1585 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  0 of 1585 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   nbody.vcxproj -> D:\Programming\n-body-cuda\bin\Release\nbody.exe

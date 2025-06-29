@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.18)
 project(nbody LANGUAGES CXX CUDA)
 
+set(CMAKE_CUDA_ARCHITECTURES 86 89 120)
+
 find_package(CUDAToolkit REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
