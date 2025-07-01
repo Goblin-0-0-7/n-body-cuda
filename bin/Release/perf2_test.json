@@ -1,0 +1,24 @@
+{
+	"test_cases": {
+		"32K-Perf": {
+		"N": 32768,
+		"p": 64,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 12.7,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		},
+		"64K-Perf": {
+		"N": 65536,
+		"p": 64,
+		"dt": 1e-6,
+		"steps": 10000,
+		"clusterCubeWidth": 16,
+		"energy values": 0,
+		"configuration values": 0,
+		"GPU values": 0
+		}
+	}
+}

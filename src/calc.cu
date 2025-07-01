@@ -183,9 +183,9 @@ __global__ void reduce2(float* energy)
 
 __device__ void updatePos(float4* pos, float4* vel, float4* acc, float dt, float dt2)
 {
-    pos->x += 0.5f * acc->x * dt2 + vel->x * dt;
-    pos->y += 0.5f * acc->y * dt2 + vel->y * dt;
-    pos->z += 0.5f * acc->z * dt2 + vel->z * dt;
+    pos->x += vel->x * dt;
+    pos->y += vel->y * dt;
+    pos->z += vel->z * dt;
 }
 
 __device__ void updateVel(float4* vel, float4* acc, float dt)
@@ -233,11 +233,8 @@ __global__ void integrateEuler(int N, float4* pos, float4* vel, float4* acc, flo
         float4* globalV = (float4*)vel;
         float4* globalA = (float4*)acc;
 
-        /* update first position with old velocity to keep  *\
-        **     x_n+1 = x_n + v_n * dt + 1/2 a_n * dt2       **
-        ** true. Afterwards velocity can be updated to v_n+1 */
-        updatePos(&globalX[idx], &globalV[idx], &globalA[idx], dt, dt2);
         updateVel(&globalV[idx], &globalA[idx], dt);
+        updatePos(&globalX[idx], &globalV[idx], &globalA[idx], dt, dt2);
     }
 }
 
