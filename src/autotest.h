@@ -35,7 +35,7 @@ private:
 	double testTime = 0;
 
 public:
-	Test(int N, int p, float dt, int steps, float clusterCubeWidth, INTEGRATION_METHODS integMethod, std::string testname);
+	Test(int N, int p, float dt, int steps, float clusterCubeWidth, INTEGRATION_METHODS integMethod, int seed, std::string testname);
 	~Test();
 	void deleteSim();
 	void runTest();

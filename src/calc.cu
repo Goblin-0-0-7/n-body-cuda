@@ -11,6 +11,32 @@
 #include "calc.h"
 //#include "visuals.h"
 
+INTEGRATION_METHODS str2IntegMethod(std::string name)
+{
+    if (name == "EULER") {
+        return EULER;
+    }
+    else if (name == "EULER_IM") {
+        return EULER_IM;
+    }
+    else if (name == "LEAPFROG") {
+        return LEAPFROG;
+    }
+    else if (name == "VERLET") {
+        return VERLET;
+    }
+    else {
+        std::cout << "ERROR::CALC::UNKNOWN_INTEGRATION_METHOD: " << name << std::endl;
+        return EULER; // default
+	}
+}
+
+
+
+__device__ void updatePosImmediat(float4* pos, float4* vel, float dt);
+__device__ void updateVelImmediat(float4* vel, float3* acc, float dt);
+
+
 __device__ float3 bodyBodyInteraction(float4 bi, float4 bj, float3 ai)
 {
     float3 r;
@@ -44,11 +70,10 @@ __device__ float3 tile_calculation(float4 myPosition, float3 accel)
 }
 
 
-__global__ void calculate_forces(void* devX, void* devV, void* devA, int N, int p, float dt, float dt2)
+__global__ void calculate_forces(void* devX, void* devA, int N, int p, float dt)
 {
     extern __shared__ float4 shPosition[];
     float4* globalX = (float4*)devX;
-    //const autofloat4* globalV = (float4*)devV;
     float4* globalA = (float4*)devA;
     float4 myPosition;
     int i, tile;
@@ -63,13 +88,40 @@ __global__ void calculate_forces(void* devX, void* devV, void* devA, int N, int 
         acc = tile_calculation(myPosition, acc);
         __syncthreads();
     }
-    // Save the result in global memory for the integration step. // Note: for the next step, the integration is already done here
+    // Save the result in global memory for the integration step.
     float4 acc4 = { acc.x, acc.y, acc.z, 0.0f };
     globalA[gtid] = acc4;
-    // TODO: test if this change improves performance
-    // Already update position here when acceleration is already in shared memory
-    //updateVelImidiate(&globalV[gtid], &acc, dt); // TODO: does this really speed things up, what memory calls are really done?
-    //updatePosImidiate(&globalX[gtid], &globalV[gtid], &acc, dt, dt2);
+}
+
+
+__global__ void calculate_forcesNintegrate(void* devX, void* devV, void* devA, int N, int p, float dt)
+{
+    extern __shared__ float4 shPosition[];
+    float4* globalX = (float4*)devX;
+    float4* globalV = (float4*)devV;
+    float4* globalA = (float4*)devA;
+    float4 myPosition, myVelocity;
+    int i, tile;
+    float3 acc = { 0.0f, 0.0f, 0.0f };
+    int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    myPosition = globalX[gtid];
+    myVelocity = globalV[gtid];
+    for (i = 0, tile = 0; i < N; i += p, tile++) { // N needs to be divisible by p
+        int idx = tile * blockDim.x + threadIdx.x;
+        shPosition[threadIdx.x] = globalX[idx];
+        __syncthreads();
+        acc = tile_calculation(myPosition, acc);
+        __syncthreads();
+    }
+    // Save the result in global memory for the integration step.
+    float4 acc4 = { acc.x, acc.y, acc.z, 0.0f };
+    globalA[gtid] = acc4;
+    // Already update position here when acceleration is already in local memory
+    updateVelImmediat(&myVelocity, &acc, dt);
+    updatePosImmediat(&globalX[gtid], &myVelocity, dt);
+    // Save velocity to global memory
+    globalV[gtid] = myVelocity;
 }
 
 /*  -----------------------------------------------  *\
@@ -181,7 +233,7 @@ __global__ void reduce2(float* energy)
 **                Integration Methods                **
 \*  -----------------------------------------------  */
 
-__device__ void updatePos(float4* pos, float4* vel, float4* acc, float dt, float dt2)
+__device__ void updatePos(float4* pos, float4* vel, float dt)
 {
     pos->x += vel->x * dt;
     pos->y += vel->y * dt;
@@ -195,14 +247,14 @@ __device__ void updateVel(float4* vel, float4* acc, float dt)
     vel->z += acc->z * dt;
 }
 
-__device__ void updatePosImediate(float4* pos, float4* vel, float3* acc, float dt, float dt2)
+__device__ void updatePosImmediat(float4* pos, float4* vel, float dt)
 {
-    pos->x += 0.5 * acc->x * dt2 + vel->x * dt;
-    pos->y += 0.5 * acc->y * dt2 + vel->y * dt;
-    pos->z += 0.5 * acc->z + dt2 + vel->z * dt;
+    pos->x += vel->x * dt;
+    pos->y += vel->y * dt;
+    pos->z += vel->z * dt;
 }
 
-__device__ void updateVelImediate(float4* vel, float3* acc, float dt)
+__device__ void updateVelImmediat(float4* vel, float3* acc, float dt)
 {
     vel->x += acc->x * dt;
     vel->y += acc->y * dt;
@@ -225,7 +277,7 @@ __device__ void updatePosVerlet(float4* pos, float4* vel, float4* acc, float dt)
 }
 
 
-__global__ void integrateEuler(int N, float4* pos, float4* vel, float4* acc, float dt, float dt2)
+__global__ void integrateEuler(int N, float4* pos, float4* vel, float4* acc, float dt)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x; // TODO: verify idx counting
     if (idx < N) {
@@ -234,7 +286,7 @@ __global__ void integrateEuler(int N, float4* pos, float4* vel, float4* acc, flo
         float4* globalA = (float4*)acc;
 
         updateVel(&globalV[idx], &globalA[idx], dt);
-        updatePos(&globalX[idx], &globalV[idx], &globalA[idx], dt, dt2);
+        updatePos(&globalX[idx], &globalV[idx], dt);
     }
 }
 
@@ -252,7 +304,7 @@ __global__ void integrateEuler(int N, float4* pos, float4* vel, float4* acc, flo
 //    }
 //}
 
-
+// TODO: fix Verlet algorithm
 __global__ void integrateVerlet1(int N, float4* pos, float4* vel, float4* acc, float dt)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x; // TODO: verify idx counting
@@ -326,7 +378,7 @@ NBodyCalc::~NBodyCalc() {
     }
 }
 
-int NBodyCalc::initCalc(int N, int p, float partWeight, range3 posRange, range3 velRange, range3 accRange, INTEGRATION_METHODS integMethod)
+int NBodyCalc::initCalc(int N, int p, float partWeight, range3 posRange, range3 velRange, range3 accRange, INTEGRATION_METHODS integMethod, int seed)
 {
     int failure;
 
@@ -366,7 +418,7 @@ int NBodyCalc::initCalc(int N, int p, float partWeight, range3 posRange, range3 
     /* Initialise energy */
     cudaMemset(d_energy, 0, N);
 
-    failure = initParticlesHost(); // TODO: run with cuda
+    failure = initParticlesHost(seed); // TODO: run with cuda
     if (failure) {
         std::cout << "ERROR::CALC::INIT_PARTICLES_FAILED\n" << std::endl;
         return 1;
@@ -393,6 +445,8 @@ void NBodyCalc::setIntegrationMethod(INTEGRATION_METHODS integMethod)
     case EULER:
         integFunc = &NBodyCalc::runEuler;
         break;
+    case EULER_IM:
+        integFunc = &NBodyCalc::runEulerImmediat;
     case LEAPFROG:
         integFunc = &NBodyCalc::runLeapfrog;
         break;
@@ -406,9 +460,16 @@ void NBodyCalc::setIntegrationMethod(INTEGRATION_METHODS integMethod)
 void NBodyCalc::runEuler(float dt, float dt2)
 {
     // TODO: calculate_forces does not jet have block/thread oversaturation handling
-    calculate_forces<<<grid_dim, p, sharedBytes >>>(d_pos, d_vel, d_acc, N, p, dt, dt2);
+    calculate_forces<<<grid_dim, p, sharedBytes >>>(d_pos, d_acc, N, p, dt);
     cudaDeviceSynchronize();
-    integrateEuler<<<block_num_integrate, blocksize_integrate>>>(N, d_pos, d_vel, d_acc, dt, dt2);
+    integrateEuler<<<block_num_integrate, blocksize_integrate>>>(N, d_pos, d_vel, d_acc, dt);
+    cudaDeviceSynchronize();
+}
+
+void NBodyCalc::runEulerImmediat(float dt, float dt2)
+{
+    // TODO: calculate_forces does not jet have block/thread oversaturation handling
+    calculate_forcesNintegrate << <grid_dim, p, sharedBytes >> > (d_pos, d_vel, d_acc, N, p, dt);
     cudaDeviceSynchronize();
 }
 
@@ -422,21 +483,26 @@ void NBodyCalc::runVerlet(float dt, float dt2)
     // TODO: calculate_forces does not jet have block/thread oversaturation handling
     integrateVerlet1 << <block_num_integrate, blocksize_integrate >> > (N, d_pos, d_vel, d_acc, dt);
     cudaDeviceSynchronize();
-    calculate_forces<<<grid_dim, p, sharedBytes>>>(d_pos, d_vel, d_acc, N, p, dt, dt2);
+    calculate_forces<<<grid_dim, p, sharedBytes>>>(d_pos, d_acc, N, p, dt);
     cudaDeviceSynchronize();
     integrateVerlet2<<<block_num_integrate, blocksize_integrate>>>(N, d_vel, d_acc, dt);
     cudaDeviceSynchronize();
 }
 
 
-int NBodyCalc::initParticlesHost()
+int NBodyCalc::initParticlesHost(int seed)
 {
     if (h_pos == nullptr || h_acc == nullptr) {
         return 1;
     }
 
     /* Initialize particles on host ? (for now yes, but probably faster on gpu) */
-    srand((unsigned int) std::time({})); // initialise seed
+    if (seed < 0) {
+        srand((unsigned int)std::time({})); // initialise seed
+    }
+    else {
+        srand(seed);
+    }
     for (int i = 0; i < N; i++) {
         h_pos[i].w = partWeight;
         h_pos[i].x = posRange.xMin + static_cast <float>(rand()) / (static_cast <float>(RAND_MAX / (posRange.xMax - posRange.xMin)));
@@ -487,7 +553,7 @@ int NBodyCalc::runSimulation(int steps, float dt)
     assert(p <= prop.maxThreadsPerBlock);
     assert(blocksize_integrate <= prop.maxThreadsPerBlock);
 
-    for (int i = 0; i < steps; i++) { // NOTE: this is currently also our render cycle
+    for (int i = 0; i < steps; i++) {
         /* Save Energy before first calculation */
         if (bsaveEnergy) {
             if (i % energyInterval == 0) {

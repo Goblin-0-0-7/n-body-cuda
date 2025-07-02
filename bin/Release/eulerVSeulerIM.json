@@ -1,0 +1,53 @@
+{
+	"version": 0.1,
+	"test_cases": {
+		"4K-Euler": {
+		"N": 4096,
+		"p": 64,
+		"dt": 1e-6,
+		"steps": 1000,
+		"clusterCubeWidth": 2,
+		"energy values": 0,
+		"configuration values": 5,
+		"GPU values": 0,
+		"integrate": "EULER",
+		"seed": 12345
+		},
+		"8K-Euler": {
+		"N": 8192,
+		"p": 64,
+		"dt": 1e-6,
+		"steps": 1000,
+		"clusterCubeWidth": 4,
+		"energy values": 0,
+		"configuration values": 5,
+		"GPU values": 0,
+		"integrate": "EULER",
+		"seed": 12345
+		},
+		"4K-EulerIM": {
+		"N": 4096,
+		"p": 64,
+		"dt": 1e-6,
+		"steps": 1000,
+		"clusterCubeWidth": 2,
+		"energy values": 0,
+		"configuration values": 5,
+		"GPU values": 0,
+		"integrate": "EULER_IM",
+		"seed": 12345
+		},
+		"8K-EulerIM": {
+		"N": 8192,
+		"p": 64,
+		"dt": 1e-6,
+		"steps": 1000,
+		"clusterCubeWidth": 4,
+		"energy values": 0,
+		"configuration values": 5,
+		"GPU values": 0,
+		"integrate": "EULER_IM",
+		"seed": 12345
+		}
+	}
+}

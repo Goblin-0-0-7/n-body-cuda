@@ -12,7 +12,9 @@
 #define G = 6.67430 // gravitational const. (10^-11 m³/kgs³)
 
 /* Position calculation methods */
-enum INTEGRATION_METHODS { EULER, LEAPFROG, VERLET };
+enum INTEGRATION_METHODS { EULER, EULER_IM, LEAPFROG, VERLET };
+
+INTEGRATION_METHODS str2IntegMethod(std::string name);
 
 typedef struct range3 {
 	float xMin;
@@ -67,14 +69,15 @@ private:
 	int gpuInterval;
 	std::filesystem::path gpuFilePath;
 
-	int initParticlesHost();
+	int initParticlesHost(int seed);
 public:
 	NBodyCalc();
 	~NBodyCalc();
-	int initCalc(int N, int p, float partWeight, range3 posRange, range3 velRange, range3 accRange, INTEGRATION_METHODS integMethod);
+	int initCalc(int N, int p, float partWeight, range3 posRange, range3 velRange, range3 accRange, INTEGRATION_METHODS integMethod, int seed);
 	int runSimulation(int steps, float dt);
 	void setIntegrationMethod(INTEGRATION_METHODS integMethod);
 	void runEuler(float dt, float dt2);
+	void runEulerImmediat(float dt, float dt2);
 	void runLeapfrog(float dt, float dt2);
 	void runVerlet(float dt, float dt2);
 	void sumEnergy();

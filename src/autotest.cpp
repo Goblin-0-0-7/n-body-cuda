@@ -9,7 +9,7 @@
 
 // TODO: add func to read test case config file and generate testcases
 
-Test::Test(int N, int p, float dt, int steps, float clusterCubeWidth, INTEGRATION_METHODS integMethod, std::string testname)
+Test::Test(int N, int p, float dt, int steps, float clusterCubeWidth, INTEGRATION_METHODS integMethod, int seed, std::string testname)
 {
 	sim = new NBodyCalc();
 
@@ -20,6 +20,7 @@ Test::Test(int N, int p, float dt, int steps, float clusterCubeWidth, INTEGRATIO
 	this->dt = dt;
 	this->steps = steps;
 	this->integMethod = integMethod;
+
 	
 	/* ranges for the initial position of the particles */
 	posRange.xMin = -(clusterCubeWidth/2);
@@ -43,7 +44,7 @@ Test::Test(int N, int p, float dt, int steps, float clusterCubeWidth, INTEGRATIO
 	accRange.zMin = accRange.xMin;
 	accRange.zMax = accRange.xMax;
 
-	sim->initCalc(N, p, partWeight, posRange, velRange, accRange, integMethod);
+	sim->initCalc(N, p, partWeight, posRange, velRange, accRange, integMethod, seed);
 
 	outPath = std::filesystem::path("../testresults") / testname;
 	std::filesystem::create_directories(outPath);

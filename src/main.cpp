@@ -14,9 +14,12 @@ int main(int argc, char* argv[]) {
 	int failure;
 	int N, p, steps;
 	float dt, clusterCubeWidth;
+	INTEGRATION_METHODS integrateFunc;
+	int seed = -1;
 
 	int num_energyValues, num_configValues, num_gpuValues;
 	bool testing = false;
+	float testFileVersion = 0;
 	size_t num_tests = 0;
 	std::string testFilePath;
 	Test* test;
@@ -95,6 +98,10 @@ int main(int argc, char* argv[]) {
 				return 1;
 			}
 			
+			/* Check file version */
+            if (testData.contains("version")) {
+				testFileVersion = testData["version"];
+            }
 			/* Generate Tests */
 			for (const auto& [testName, params] : testData["test_cases"].items()) {
 				N = params["N"];
@@ -106,7 +113,16 @@ int main(int argc, char* argv[]) {
 				num_configValues = params["configuration values"];
 				num_gpuValues = params["GPU values"];
 
-				test = new Test(N, p, dt, steps, clusterCubeWidth, EULER, testName);
+				if (testFileVersion > 0) {
+					integrateFunc = str2IntegMethod(params["integrate"]);
+					seed = params["seed"];
+				}
+				else {
+					integrateFunc = EULER;
+					seed = -1;
+				}
+
+				test = new Test(N, p, dt, steps, clusterCubeWidth, integrateFunc, seed, testName);
 				if (num_energyValues) {
 					test->addEnergyEval(num_energyValues);
 				}
@@ -143,7 +159,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	else {
-		failure = cudaSim->initCalc(N, p, partWeight, posRange, velRange, accRange, EULER);
+		failure = cudaSim->initCalc(N, p, partWeight, posRange, velRange, accRange, EULER, -1);
 		if (failure) {
 			std::cout << "ERROR::CALC::INITIALIZATION_FAILED\n" << std::endl;
 			return 1;
